@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/解决方案项/">
+    <File Path="../../visio-tool/src/ThisAddIn.cs" />
+    <File Path="../../visio-tool/src/ThisAddIn.Designer.cs" />
+    <File Path="../../visio-tool/src/ThisAddIn.Designer.xml" />
+    <File Path="../../visio-tool/src/VisioDataMapper.csproj" />
+  </Folder>
+  <Project Path="VisioDataMapper/VisioDataMapper.csproj" />
+</Solution>

@@ -1,0 +1,15 @@
+D:\WorkSpace\mxl\mxl-ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\bin\Release\VisioDataMapper.dll
+D:\WorkSpace\mxl\mxl-ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\bin\Release\VisioDataMapper.pdb
+D:\WorkSpace\mxl\mxl-ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\bin\Release\VisioDataMapper.dll.manifest
+D:\WorkSpace\mxl\mxl-ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\bin\Release\VisioDataMapper.vsto
+D:\WorkSpace\mxl\mxl-ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\bin\Release\Microsoft.Office.Tools.Common.v4.0.Utilities.dll
+D:\WorkSpace\mxl\mxl-ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\obj\Release\VisioDataMapper.csproj.AssemblyReference.cache
+D:\WorkSpace\mxl\mxl-ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\obj\Release\Interop.Microsoft.Office.Core.dll
+D:\WorkSpace\mxl\mxl-ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\obj\Release\Interop.Microsoft.Office.Interop.Visio.dll
+D:\WorkSpace\mxl\mxl-ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\obj\Release\VisioDataMapper.csproj.ResolveComReference.cache
+D:\WorkSpace\mxl\mxl-ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\obj\Release\VisioDataMapper.Properties.Resources.resources
+D:\WorkSpace\mxl\mxl-ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\obj\Release\VisioDataMapper.csproj.GenerateResource.cache
+D:\WorkSpace\mxl\mxl-ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\obj\Release\VisioDataMapper.csproj.CoreCompileInputs.cache
+D:\WorkSpace\mxl\mxl-ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\obj\Release\VisioDat.B775EF99.Up2Date
+D:\WorkSpace\mxl\mxl-ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\obj\Release\VisioDataMapper.dll
+D:\WorkSpace\mxl\mxl-ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\obj\Release\VisioDataMapper.pdb
