@@ -72,6 +72,12 @@ namespace VisioDataMapper
                 // 软件与数据库
                 case "btnFuncStructure": featureName = "功能结构图"; break;
                 case "btnClassDiagram": featureName = "类图"; break;
+                case "btnEntityAttribute":
+                    using (var form = new FormEntityAttributeDiagram())
+                    {
+                        form.ShowDialog();
+                    }
+                    return;
                 case "btnERLogical": featureName = "ER图 - 逻辑模型"; break;
                 case "btnERPhysical": featureName = "ER图 - 物理模型"; break;
                 case "btnUseCaseSystem": featureName = "用例图 - 系统用例图"; break;

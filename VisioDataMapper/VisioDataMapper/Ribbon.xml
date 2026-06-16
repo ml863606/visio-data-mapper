@@ -60,6 +60,7 @@
             <button id="btnFuncStructure" label="功能结构图" showImage="true" imageMso="TraceDependents" size="normal" onAction="OnAction" />
             <button id="btnClassDiagram" label="类图" showImage="true" imageMso="GroupOutline" size="normal" onAction="OnAction" />
             <menu id="menuERDiagram" label="ER图" showImage="true" imageMso="DatabaseRelationships" size="normal">
+              <button id="btnEntityAttribute" label="实体属性图" showImage="true" imageMso="TableProperties" onAction="OnAction" />
               <button id="btnERLogical" label="逻辑模型" showImage="true" imageMso="AdpPrimaryKey" onAction="OnAction" />
               <button id="btnERPhysical" label="物理模型" showImage="true" imageMso="FileNewDatabase" onAction="OnAction" />
             </menu>
