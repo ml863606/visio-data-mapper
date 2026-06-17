@@ -63,6 +63,12 @@ namespace VisioDataMapper
                         form.ShowDialog();
                     }
                     return;
+                case "btnModuleDiagram":
+                    using (var form = new FormModuleDiagram())
+                    {
+                        form.ShowDialog();
+                    }
+                    return;
                 case "btnLayeredArch": featureName = "层级架构图"; break;
                 case "btnEquityArch": featureName = "股权架构图"; break;
                 case "btnSysArch": featureName = "系统架构图"; break;

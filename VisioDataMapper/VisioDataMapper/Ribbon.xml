@@ -52,6 +52,9 @@
             <button id="btnMatrixArch" label="矩阵架构图" showImage="true" imageMso="DiagramMatrix" size="normal" onAction="OnAction" />
             <button id="btnFamilyTree" label="家谱图" showImage="true" imageMso="Relationships" size="normal" onAction="OnAction" />
           </box>
+          <box id="boxArchCol3" boxStyle="vertical">
+            <button id="btnModuleDiagram" label="功能模块图" showImage="true" imageMso="TraceDependents" size="normal" onAction="OnAction" />
+          </box>
         </group>
 
         <!-- 4. 软件与数据库 -->

@@ -218,6 +218,9 @@
     <Compile Include="FormOrgChart.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="FormModuleDiagram.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="FormEntityAttributeDiagram.cs">
       <SubType>Form</SubType>
     </Compile>
