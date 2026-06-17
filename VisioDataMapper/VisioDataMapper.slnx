@@ -5,5 +5,5 @@
     <File Path="../../visio-tool/src/ThisAddIn.Designer.xml" />
     <File Path="../../visio-tool/src/VisioDataMapper.csproj" />
   </Folder>
-  <Project Path="VisioDataMapper/VisioDataMapper.csproj" />
+  <Project Path="VisioDataMapper/VisioDataMapper.csproj" Id="cdf73cb5-c9ae-47ca-9700-80e7c902c9e3" />
 </Solution>
