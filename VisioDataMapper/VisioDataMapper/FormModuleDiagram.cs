@@ -803,25 +803,6 @@ namespace VisioDataMapper
             public string LongestText { get; set; } = string.Empty;
         }
 
-        // Strongly typed JSON structures
-        public class ModuleData
-        {
-            public string sys_name { get; set; }
-            public List<PlatformData> platform { get; set; }
-        }
-
-        public class PlatformData
-        {
-            public string name { get; set; }
-            public List<ModuleInfo> module { get; set; }
-        }
-
-        public class ModuleInfo
-        {
-            public string name { get; set; }
-            public List<string> sub { get; set; }
-        }
-
         private TreeNode ParseTree(string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return null;
@@ -829,37 +810,52 @@ namespace VisioDataMapper
             try
             {
                 var serializer = new JavaScriptSerializer();
-                var data = serializer.Deserialize<ModuleData>(text);
+                var data = serializer.Deserialize<System.Collections.Generic.Dictionary<string, object>>(text);
                 if (data == null) return null;
 
+                string sysName = data.ContainsKey("sys_name") && data["sys_name"] != null ? data["sys_name"].ToString() : "系统";
+
                 // Set diagram title to sys_name if user hasn't modified the title box
-                if (txtTitle.Text == "功能模块图" && !string.IsNullOrWhiteSpace(data.sys_name))
+                if (txtTitle.Text == "功能模块图" && data.ContainsKey("sys_name") && data["sys_name"] != null && !string.IsNullOrWhiteSpace(data["sys_name"].ToString()))
                 {
-                    txtTitle.Text = data.sys_name;
+                    txtTitle.Text = data["sys_name"].ToString();
                 }
 
-                TreeNode root = new TreeNode { Text = data.sys_name ?? "系统" };
+                TreeNode root = new TreeNode { Text = sysName };
 
-                if (data.platform != null)
+                if (data.ContainsKey("platform") && data["platform"] is System.Collections.ArrayList platList)
                 {
-                    foreach (var plat in data.platform)
+                    foreach (var platObj in platList)
                     {
-                        TreeNode platNode = new TreeNode { Text = plat.name, Parent = root };
-                        root.Children.Add(platNode);
-
-                        if (plat.module != null)
+                        if (platObj is System.Collections.Generic.Dictionary<string, object> plat)
                         {
-                            foreach (var mod in plat.module)
-                            {
-                                TreeNode modNode = new TreeNode { Text = mod.name, Parent = platNode };
-                                platNode.Children.Add(modNode);
+                            string pName = plat.ContainsKey("name") && plat["name"] != null ? plat["name"].ToString() : "";
+                            TreeNode platNode = new TreeNode { Text = pName, Parent = root };
+                            root.Children.Add(platNode);
 
-                                if (mod.sub != null)
+                            if (plat.ContainsKey("module") && plat["module"] is System.Collections.ArrayList modList)
+                            {
+                                foreach (var modObj in modList)
                                 {
-                                    foreach (var sub in mod.sub)
+                                    if (modObj is string modName)
                                     {
-                                        TreeNode subNode = new TreeNode { Text = sub, Parent = modNode };
-                                        modNode.Children.Add(subNode);
+                                        TreeNode modNode = new TreeNode { Text = modName, Parent = platNode };
+                                        platNode.Children.Add(modNode);
+                                    }
+                                    else if (modObj is System.Collections.Generic.Dictionary<string, object> modDict)
+                                    {
+                                        string mName = modDict.ContainsKey("name") && modDict["name"] != null ? modDict["name"].ToString() : "";
+                                        TreeNode modNode = new TreeNode { Text = mName, Parent = platNode };
+                                        platNode.Children.Add(modNode);
+
+                                        if (modDict.ContainsKey("sub") && modDict["sub"] is System.Collections.ArrayList subList)
+                                        {
+                                            foreach (var subObj in subList)
+                                            {
+                                                TreeNode subNode = new TreeNode { Text = subObj.ToString(), Parent = modNode };
+                                                modNode.Children.Add(subNode);
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -1067,49 +1063,28 @@ namespace VisioDataMapper
 
         private void DrawConnector(Visio.Page page, TreeNode parent, TreeNode child, double defaultWidth, double defaultHeight, Dictionary<int, LevelOption> optionsByLevel, bool isLeftToRight, int parentLevel, int childLevel)
         {
-            double parentWidth;
-            double parentHeight;
-            double childWidth;
-            double childHeight;
-            GetShapeSize(parentLevel, defaultWidth, defaultHeight, optionsByLevel, out parentWidth, out parentHeight);
-            GetShapeSize(childLevel, defaultWidth, defaultHeight, optionsByLevel, out childWidth, out childHeight);
+            if (parent.VisioShape == null || child.VisioShape == null) return;
 
-            double beginX;
-            double beginY;
-            double endX;
-            double endY;
+            object connectorTool = page.Application.ConnectorToolDataObject;
+            Visio.Shape connector = page.Drop(connectorTool, 0, 0);
 
-            if (isLeftToRight)
-            {
-                beginX = parent.X + parentWidth / 2.0;
-                beginY = parent.Y;
-                endX = child.X - childWidth / 2.0;
-                endY = child.Y;
-            }
-            else
-            {
-                beginX = parent.X;
-                beginY = parent.Y - parentHeight / 2.0;
-                endX = child.X;
-                endY = child.Y + childHeight / 2.0;
-            }
+            // Set styles for the connector
+            connector.CellsU["LineColor"].Formula = "RGB(0, 0, 0)";
+            connector.CellsU["LineWeight"].Formula = $"{currentLineWidthPt.ToString(CultureInfo.InvariantCulture)}pt";
+            connector.CellsU["BeginArrow"].Formula = "0";
+            connector.CellsU["EndArrow"].Formula = chkArrow.Checked ? "4" : "0";
 
-            if (isLeftToRight)
-            {
-                double midX = (beginX + endX) / 2.0;
-                DrawAcademicLine(page, beginX, beginY, midX, beginY);
-                DrawAcademicLine(page, midX, beginY, midX, endY);
-                Visio.Shape lastSegment = DrawAcademicLine(page, midX, endY, endX, endY);
-                lastSegment.CellsU["EndArrow"].Formula = chkArrow.Checked ? "4" : "0";
-            }
-            else
-            {
-                double midY = beginY - Math.Max(0.12, (beginY - endY) * 0.45);
-                DrawAcademicLine(page, beginX, beginY, beginX, midY);
-                DrawAcademicLine(page, beginX, midY, endX, midY);
-                Visio.Shape lastSegment = DrawAcademicLine(page, endX, midY, endX, endY);
-                lastSegment.CellsU["EndArrow"].Formula = chkArrow.Checked ? "4" : "0";
-            }
+            // Force tree (OrgChart) routing style to merge trunks
+            TrySetFormula(connector, "RouteStyle", isLeftToRight ? "6" : "5");
+            TrySetFormula(connector, "ShapeRouteStyle", isLeftToRight ? "6" : "5");
+            TrySetFormula(connector, "ConLineRouteExt", isLeftToRight ? "4" : "3");
+
+            // Glue parent and child shape to the connector endpoints
+            Visio.Cell beginCell = connector.CellsU["BeginX"];
+            beginCell.GlueTo(parent.VisioShape.CellsU["PinX"]);
+
+            Visio.Cell endCell = connector.CellsU["EndX"];
+            endCell.GlueTo(child.VisioShape.CellsU["PinX"]);
         }
 
         private void DrawTitleConnector(Visio.Page page, double beginX, double beginY, double endX, double endY)
