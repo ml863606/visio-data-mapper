@@ -227,6 +227,9 @@
     <Compile Include="FormUseCaseDiagram.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="FormDataFlowDiagram.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <EmbeddedResource Include="Ribbon.xml" />
     <AppDesigner Include="Properties\" />
     <None Include="VisioDataMapper_TemporaryKey.pfx" />

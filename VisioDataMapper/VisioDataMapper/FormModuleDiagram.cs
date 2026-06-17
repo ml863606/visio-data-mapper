@@ -257,6 +257,7 @@ namespace VisioDataMapper
             dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "NodeCount", HeaderText = "节点数", ReadOnly = true, FillWeight = 55 });
             dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaxText", HeaderText = "最长文字", ReadOnly = true, FillWeight = 110 });
             dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "RootTopExtraGapInch", HeaderText = "RootTopExtraGapInch", FillWeight = 95 });
+            dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "LastLevelSpacingPx", HeaderText = "末层间距(px)", FillWeight = 85 });
 
             var directionColumn = new DataGridViewComboBoxColumn { Name = "Direction", HeaderText = "形状排列", FillWeight = 90 };
             directionColumn.Items.AddRange("横着排列", "竖着排列");
@@ -404,6 +405,11 @@ namespace VisioDataMapper
                 {
                     rootTopExtraGapInch = 0;
                 }
+                double lastLevelSpacingPx = hasExistingOption ? existingOption.LastLevelSpacingPx : 2.0;
+                if (!isLastLevel)
+                {
+                    lastLevelSpacingPx = 0;
+                }
 
                 var option = new LevelOption
                 {
@@ -413,7 +419,8 @@ namespace VisioDataMapper
                     IsVertical = isVertical,
                     WidthMm = widthMm,
                     HeightMm = heightMm,
-                    RootTopExtraGapInch = rootTopExtraGapInch
+                    RootTopExtraGapInch = rootTopExtraGapInch,
+                    LastLevelSpacingPx = lastLevelSpacingPx
                 };
                 levelOptions.Add(option);
 
@@ -422,6 +429,7 @@ namespace VisioDataMapper
                     stat.NodeCount,
                     stat.LongestText,
                     level == 1 ? rootTopExtraGapInch.ToString("0.###", CultureInfo.InvariantCulture) : string.Empty,
+                    isLastLevel ? lastLevelSpacingPx.ToString("0.#", CultureInfo.InvariantCulture) : string.Empty,
                     isVertical ? "竖着排列" : "横着排列",
                     widthMm.ToString("0.#", CultureInfo.InvariantCulture),
                     heightMm.ToString("0.#", CultureInfo.InvariantCulture));
@@ -508,6 +516,12 @@ namespace VisioDataMapper
 
                     rootTopExtraGapInch = parsedRootTopExtraGapInch;
                 }
+                double lastLevelSpacingPx = 0;
+                double parsedLastLevelSpacingPx;
+                if (TryParsePositiveNumber(Convert.ToString(row.Cells["LastLevelSpacingPx"].Value), out parsedLastLevelSpacingPx))
+                {
+                    lastLevelSpacingPx = parsedLastLevelSpacingPx;
+                }
 
                 result[level] = new LevelOption
                 {
@@ -517,7 +531,8 @@ namespace VisioDataMapper
                     IsVertical = Convert.ToString(row.Cells["Direction"].Value) == "竖着排列",
                     WidthMm = widthMm,
                     HeightMm = heightMm,
-                    RootTopExtraGapInch = rootTopExtraGapInch
+                    RootTopExtraGapInch = rootTopExtraGapInch,
+                    LastLevelSpacingPx = lastLevelSpacingPx
                 };
             }
 
@@ -794,6 +809,12 @@ namespace VisioDataMapper
                 {
                     rootTopExtraGapInch = ParsePositiveNumber(Convert.ToString(row.Cells["RootTopExtraGapInch"].Value), "RootTopExtraGapInch");
                 }
+                double lastLevelSpacingPx = 0;
+                double parsedLastLevelSpacingPx;
+                if (TryParsePositiveNumber(Convert.ToString(row.Cells["LastLevelSpacingPx"].Value), out parsedLastLevelSpacingPx))
+                {
+                    lastLevelSpacingPx = parsedLastLevelSpacingPx;
+                }
 
                 result[level] = new LevelOption
                 {
@@ -803,7 +824,8 @@ namespace VisioDataMapper
                     IsVertical = isVertical,
                     WidthMm = widthMm,
                     HeightMm = heightMm,
-                    RootTopExtraGapInch = rootTopExtraGapInch
+                    RootTopExtraGapInch = rootTopExtraGapInch,
+                    LastLevelSpacingPx = lastLevelSpacingPx
                 };
             }
 
@@ -837,6 +859,7 @@ namespace VisioDataMapper
             public double WidthMm { get; set; }
             public double HeightMm { get; set; }
             public double RootTopExtraGapInch { get; set; }
+            public double LastLevelSpacingPx { get; set; }
         }
 
         private class LevelStats
@@ -933,17 +956,70 @@ namespace VisioDataMapper
                 childrenSize += child.SubtreeSize;
             }
 
-            double spacing = isLeftToRight ? verSpacing : horSpacing;
+            double spacing = GetSiblingSpacing(node, horSpacing, verSpacing, isLeftToRight);
             childrenSize += (node.Children.Count - 1) * spacing;
 
             node.SubtreeSize = Math.Max(selfSize, childrenSize);
+        }
+
+        private double GetSiblingSpacing(TreeNode parent, double horSpacing, double verSpacing, bool isLeftToRight)
+        {
+            double defaultSpacing = isLeftToRight ? verSpacing : horSpacing;
+            if (parent == null || parent.Children.Count == 0)
+            {
+                return defaultSpacing;
+            }
+
+            bool childrenAreLastLevel = true;
+            foreach (var child in parent.Children)
+            {
+                if (child.Children.Count > 0)
+                {
+                    childrenAreLastLevel = false;
+                    break;
+                }
+            }
+
+            return childrenAreLastLevel ? GetLastLevelCompactSpacingInch(parent) : defaultSpacing;
+        }
+
+        private double GetLastLevelCompactSpacingInch(TreeNode parent)
+        {
+            double spacingPx = 2.0;
+            if (parent != null && parent.Children.Count > 0)
+            {
+                int lastLevel = GetNodeDepth(parent.Children[0]);
+                foreach (var option in levelOptions)
+                {
+                    if (option.Level == lastLevel && option.LastLevelSpacingPx > 0)
+                    {
+                        spacingPx = option.LastLevelSpacingPx;
+                        break;
+                    }
+                }
+            }
+
+            return spacingPx / 96.0;
+        }
+
+        private int GetNodeDepth(TreeNode node)
+        {
+            int depth = 0;
+            TreeNode current = node;
+            while (current != null)
+            {
+                depth++;
+                current = current.Parent;
+            }
+
+            return depth;
         }
 
         private void AssignCoordinates(TreeNode node, double defaultWidth, double defaultHeight, double horSpacing, double verSpacing, Dictionary<int, LevelOption> optionsByLevel, bool isLeftToRight, int level)
         {
             if (node.Children.Count == 0) return;
 
-            double spacing = isLeftToRight ? verSpacing : horSpacing;
+            double spacing = GetSiblingSpacing(node, horSpacing, verSpacing, isLeftToRight);
             double totalSize = 0;
             foreach (var child in node.Children)
             {
@@ -966,7 +1042,7 @@ namespace VisioDataMapper
                     GetShapeSize(level + 1, defaultWidth, defaultHeight, optionsByLevel, out childWidth, out childHeight);
                     child.X = node.X + nodeWidth / 2.0 + horSpacing + childWidth / 2.0;
                     child.Y = currentY - child.SubtreeSize / 2.0;
-                    currentY -= child.SubtreeSize + verSpacing;
+                    currentY -= child.SubtreeSize + spacing;
 
                     AssignCoordinates(child, defaultWidth, defaultHeight, horSpacing, verSpacing, optionsByLevel, isLeftToRight, level + 1);
                 }
@@ -986,7 +1062,7 @@ namespace VisioDataMapper
                     GetShapeSize(level + 1, defaultWidth, defaultHeight, optionsByLevel, out childWidth, out childHeight);
                     child.X = currentX + child.SubtreeSize / 2.0;
                     child.Y = node.Y - nodeHeight / 2.0 - verSpacing - childHeight / 2.0;
-                    currentX += child.SubtreeSize + horSpacing;
+                    currentX += child.SubtreeSize + spacing;
 
                     AssignCoordinates(child, defaultWidth, defaultHeight, horSpacing, verSpacing, optionsByLevel, isLeftToRight, level + 1);
                 }

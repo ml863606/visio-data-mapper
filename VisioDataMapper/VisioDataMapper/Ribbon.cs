@@ -96,7 +96,12 @@ namespace VisioDataMapper
                 case "btnSeqLoop": featureName = "时序图 - 循环时序图"; break;
                 case "btnActivityDiagram": featureName = "活动图"; break;
                 case "btnStateDiagram": featureName = "状态图"; break;
-                case "btnDataFlow": featureName = "数据流图"; break;
+                case "btnDataFlow":
+                    using (var form = new FormDataFlowDiagram())
+                    {
+                        form.ShowDialog();
+                    }
+                    return;
                 case "btnUMLDeployment": featureName = "更多UML绘图 - 部署图"; break;
                 case "btnUMLComponent": featureName = "更多UML绘图 - 组件图"; break;
 
