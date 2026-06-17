@@ -17,6 +17,8 @@ namespace VisioDataMapper
         private TextBox txtTitle;
         private TextBox txtStatus;
         private TabControl tabActors;
+        private TabPage tabJson;
+        private TextBox txtJsonInput;
         private ComboBox cmbActorShape;
         private ComboBox cmbFontName;
         private ComboBox cmbFontSize;
@@ -77,17 +79,30 @@ namespace VisioDataMapper
                 Size = new Size(860, 455)
             };
 
+            tabJson = new TabPage("JSON数据");
+            txtJsonInput = new TextBox
+            {
+                Multiline = true,
+                ScrollBars = ScrollBars.Vertical,
+                Dock = DockStyle.Fill,
+                Font = new Font("Consolas", 10F, FontStyle.Regular),
+                Text = string.Empty
+            };
+            txtJsonInput.TextChanged += txtJsonInput_TextChanged;
+            tabJson.Controls.Add(txtJsonInput);
+            tabActors.TabPages.Add(tabJson);
+
             txtStatus = new TextBox
             {
                 Location = new Point(15, 580),
                 Size = new Size(860, 78),
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical,
-                ReadOnly = false,
-                BackColor = Color.White,
-                Text = $"{DateTime.Now:HH:mm:ss} 请复制JSON后点击导入JSON，或在此粘贴JSON直接渲染。"
+                ReadOnly = true,
+                BackColor = SystemColors.Control,
+                ForeColor = Color.DimGray,
+                Text = $"{DateTime.Now:HH:mm:ss} 请在上方“JSON数据”文本框中粘贴JSON进行渲染。"
             };
-            txtStatus.TextChanged += txtStatus_TextChanged;
 
             lblActorShape = new Label { Text = "参与者形状:", Location = new Point(20, 700), Size = new Size(90, 24), TextAlign = ContentAlignment.MiddleLeft };
             cmbActorShape = new ComboBox { Location = new Point(120, 697), Size = new Size(170, 26), DropDownStyle = ComboBoxStyle.DropDownList };
@@ -248,7 +263,7 @@ namespace VisioDataMapper
                 isInternalTextChange = true;
                 try
                 {
-                    txtStatus.Text = jsonText;
+                    txtJsonInput.Text = jsonText;
                 }
                 finally
                 {
@@ -274,7 +289,14 @@ namespace VisioDataMapper
                 throw new InvalidOperationException("JSON中未找到actors数据。");
             }
 
-            tabActors.TabPages.Clear();
+            // Remove all tab pages except tabJson
+            for (int i = tabActors.TabPages.Count - 1; i >= 0; i--)
+            {
+                if (tabActors.TabPages[i] != tabJson)
+                {
+                    tabActors.TabPages.RemoveAt(i);
+                }
+            }
 
             systemName = string.IsNullOrWhiteSpace(root.system) ? "系统用例图" : root.system.Trim();
             txtTitle.Text = systemName + "用例图";
@@ -323,7 +345,12 @@ namespace VisioDataMapper
                 }
             }
 
-            AppendLog($"已成功导入{txtTitle.Text} {tabActors.TabPages.Count}个参与者 {objectCount}个对象 {relationCount}组关系");
+            if (tabActors.TabPages.Count > 1)
+            {
+                tabActors.SelectedIndex = 1; // Select the first actor tab
+            }
+
+            AppendLog($"已成功导入{txtTitle.Text} {tabActors.TabPages.Count - 1}个参与者 {objectCount}个对象 {relationCount}组关系");
         }
 
         private string NormalizeName(string value, string fallback)
@@ -364,14 +391,14 @@ namespace VisioDataMapper
             AppendLog("用例图生成完成。");
         }
 
-        private void txtStatus_TextChanged(object sender, EventArgs e)
+        private void txtJsonInput_TextChanged(object sender, EventArgs e)
         {
             if (isInternalTextChange)
             {
                 return;
             }
 
-            string text = txtStatus.Text.Trim();
+            string text = txtJsonInput.Text.Trim();
             if (string.IsNullOrEmpty(text))
             {
                 return;
@@ -397,6 +424,10 @@ namespace VisioDataMapper
             var relations = new List<UseCaseRelation>();
             foreach (TabPage page in tabActors.TabPages)
             {
+                if (page == tabJson)
+                {
+                    continue;
+                }
                 string actorName = NormalizeName(page.Text, "参与者");
                 DataGridView grid = page.Controls.OfType<DataGridView>().FirstOrDefault();
                 if (grid == null)
@@ -452,6 +483,10 @@ namespace VisioDataMapper
             var actorSet = new HashSet<string>();
             foreach (TabPage page in tabActors.TabPages)
             {
+                if (page == tabJson)
+                {
+                    continue;
+                }
                 string name = Convert.ToString(page.Text);
                 if (!string.IsNullOrWhiteSpace(name))
                 {
