@@ -24,9 +24,9 @@ namespace VisioDataMapper
         private Label lblSummary;
         private DataGridView dgvPreview;
         private ComboBox cmbEntityFont;
-        private TextBox txtEntityFontSize;
+        private ComboBox cmbEntityFontSize;
         private ComboBox cmbAttributeFont;
-        private TextBox txtAttributeFontSize;
+        private ComboBox cmbAttributeFontSize;
         private TextBox txtEntityWidth;
         private TextBox txtRowHeight;
         private TextBox txtLineWidth;
@@ -62,8 +62,8 @@ namespace VisioDataMapper
         private void InitializeComponent()
         {
             Text = "智能画图-实体属性图";
-            Size = new Size(1120, 860);
-            MinimumSize = new Size(1040, 760);
+            Size = new Size(1120, 880);
+            MinimumSize = new Size(1040, 780);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.Sizable;
             MaximizeBox = true;
@@ -133,11 +133,11 @@ namespace VisioDataMapper
             lblEntityFont = new Label { Text = "实体字体", Location = new Point(18, 28), Size = new Size(65, 22) };
             cmbEntityFont = CreateFontCombo(new Point(90, 24));
             lblEntityFontSize = new Label { Text = "实体字号", Location = new Point(230, 28), Size = new Size(65, 22) };
-            txtEntityFontSize = new TextBox { Text = "10.5", Location = new Point(300, 24), Size = new Size(60, 25) };
+            cmbEntityFontSize = CreateFontSizeCombo(new Point(300, 24));
             lblAttributeFont = new Label { Text = "属性字体", Location = new Point(18, 64), Size = new Size(65, 22) };
             cmbAttributeFont = CreateFontCombo(new Point(90, 60));
             lblAttributeFontSize = new Label { Text = "属性字号", Location = new Point(230, 64), Size = new Size(65, 22) };
-            txtAttributeFontSize = new TextBox { Text = "10.5", Location = new Point(300, 60), Size = new Size(60, 25) };
+            cmbAttributeFontSize = CreateFontSizeCombo(new Point(300, 60));
 
             grpDrawOptions = new GroupBox { Text = "绘图设置", Location = new Point(550, 665), Size = new Size(525, 125) };
             lblLayoutStyle = new Label { Text = "方向样式", Location = new Point(18, 28), Size = new Size(65, 22) };
@@ -154,23 +154,23 @@ namespace VisioDataMapper
             });
             cmbLayoutStyle.SelectedIndex = 4;
             lblEntityWidth = new Label { Text = "实体宽(mm)", Location = new Point(18, 63), Size = new Size(85, 22) };
-            txtEntityWidth = new TextBox { Text = "50", Location = new Point(110, 59), Size = new Size(60, 25) };
+            txtEntityWidth = new TextBox { Text = string.Empty, Location = new Point(110, 59), Size = new Size(60, 25) };
             lblRowHeight = new Label { Text = "属性高(mm)", Location = new Point(200, 63), Size = new Size(85, 22) };
             txtRowHeight = new TextBox { Text = "8", Location = new Point(290, 59), Size = new Size(60, 25) };
             lblLineWidth = new Label { Text = "线宽(pt)", Location = new Point(380, 63), Size = new Size(65, 22) };
             txtLineWidth = new TextBox { Text = "0.75", Location = new Point(450, 59), Size = new Size(60, 25) };
-            chkPkUnderline = new CheckBox { Text = "主键下划线", Location = new Point(18, 96), Size = new Size(115, 22), Checked = true };
+            chkPkUnderline = new CheckBox { Text = "主键下划线", Location = new Point(18, 96), Size = new Size(115, 22), Checked = false };
             chkShowType = new CheckBox { Text = "显示字段类型", Location = new Point(160, 96), Size = new Size(120, 22), Checked = false };
             chkShowComment = new CheckBox { Text = "优先显示注释", Location = new Point(305, 96), Size = new Size(120, 22), Checked = true };
 
             grpTextStyle.Controls.Add(lblEntityFont);
             grpTextStyle.Controls.Add(cmbEntityFont);
             grpTextStyle.Controls.Add(lblEntityFontSize);
-            grpTextStyle.Controls.Add(txtEntityFontSize);
+            grpTextStyle.Controls.Add(cmbEntityFontSize);
             grpTextStyle.Controls.Add(lblAttributeFont);
             grpTextStyle.Controls.Add(cmbAttributeFont);
             grpTextStyle.Controls.Add(lblAttributeFontSize);
-            grpTextStyle.Controls.Add(txtAttributeFontSize);
+            grpTextStyle.Controls.Add(cmbAttributeFontSize);
             grpDrawOptions.Controls.Add(lblLayoutStyle);
             grpDrawOptions.Controls.Add(cmbLayoutStyle);
             grpDrawOptions.Controls.Add(lblEntityWidth);
@@ -216,6 +216,14 @@ namespace VisioDataMapper
             var combo = new ComboBox { Location = location, Size = new Size(105, 25), DropDownStyle = ComboBoxStyle.DropDownList };
             combo.Items.AddRange(new string[] { "宋体", "黑体", "仿宋", "楷体", "微软雅黑" });
             combo.SelectedIndex = 0;
+            return combo;
+        }
+
+        private ComboBox CreateFontSizeCombo(Point location)
+        {
+            var combo = new ComboBox { Location = location, Size = new Size(80, 25), DropDownStyle = ComboBoxStyle.DropDownList };
+            combo.Items.AddRange(new string[] { "小三", "四号", "小四", "五号", "小五" });
+            combo.SelectedIndex = 3;
             return combo;
         }
 
@@ -348,8 +356,8 @@ namespace VisioDataMapper
 
                 currentEntityFont = cmbEntityFont.SelectedItem == null ? "宋体" : cmbEntityFont.SelectedItem.ToString();
                 currentAttributeFont = cmbAttributeFont.SelectedItem == null ? "宋体" : cmbAttributeFont.SelectedItem.ToString();
-                currentEntityFontSize = ParsePositiveNumber(txtEntityFontSize.Text, "实体字号");
-                currentAttributeFontSize = ParsePositiveNumber(txtAttributeFontSize.Text, "属性字号");
+                currentEntityFontSize = ParseFontSize(cmbEntityFontSize.SelectedItem);
+                currentAttributeFontSize = ParseFontSize(cmbAttributeFontSize.SelectedItem);
                 currentLineWidth = ParsePositiveNumber(txtLineWidth.Text, "连接线宽");
                 double entityWidth = ParsePositiveNumber(txtEntityWidth.Text, "实体宽") / 25.4;
                 double rowHeight = ParsePositiveNumber(txtRowHeight.Text, "行高") / 25.4;
@@ -374,6 +382,7 @@ namespace VisioDataMapper
         {
             ClearPreview();
             entities = ParseSql(txtSql.Text);
+            UpdateEntityWidthFromParsedEntities();
             RefreshPreview();
             AppendLog($"解析完成，共 {entities.Count} 个实体。");
         }
@@ -724,6 +733,25 @@ namespace VisioDataMapper
             lblSummary.Text = summary.ToString();
         }
 
+        private void UpdateEntityWidthFromParsedEntities()
+        {
+            if (entities.Count == 0)
+            {
+                txtEntityWidth.Text = string.Empty;
+                return;
+            }
+
+            double fontSize = ParseFontSize(cmbEntityFontSize.SelectedItem);
+            double maxWidthInches = 0;
+            foreach (EntityDefinition entity in entities)
+            {
+                maxWidthInches = Math.Max(maxWidthInches, EstimateTextWidthInches(entity.Name, fontSize, 0.55));
+            }
+
+            double widthMm = Math.Ceiling(maxWidthInches * 25.4);
+            txtEntityWidth.Text = widthMm.ToString(CultureInfo.InvariantCulture);
+        }
+
         private void DrawEntities(Visio.Page page, double entityWidth, double rowHeight, string layoutStyle)
         {
             double pageWidth = page.PageSheet.CellsU["PageWidth"].Result["in"];
@@ -766,7 +794,14 @@ namespace VisioDataMapper
                 {
                     attrWidth = configuredEntityWidth + GetMaxWidth(widths, 0, (count + 1) / 2) + GetMaxWidth(widths, (count + 1) / 2, count / 2) + 1.0;
                 }
-                else if (layoutStyle == "属性在下，围成半圆" || layoutStyle == "属性在上，围成半圆" || layoutStyle == "一圈围成圆环")
+                else if (layoutStyle == "一圈围成圆环")
+                {
+                    double maxAttrWidth = GetMaxWidth(widths, 0, count);
+                    double compactWidth = configuredEntityWidth + maxAttrWidth * 2.0 + 0.85;
+                    double densityWidth = count * (maxAttrWidth + 0.12) / Math.PI + maxAttrWidth;
+                    attrWidth = Math.Max(compactWidth, densityWidth);
+                }
+                else if (layoutStyle == "属性在下，围成半圆" || layoutStyle == "属性在上，围成半圆")
                 {
                     double maxAttrWidth = GetMaxWidth(widths, 0, count);
                     attrWidth = Math.Max(configuredEntityWidth + maxAttrWidth * 2.0 + 1.1, Math.Min(6.8, count * 0.72 + maxAttrWidth));
@@ -794,7 +829,12 @@ namespace VisioDataMapper
                 return Math.Max(rowHeight * 9.0, 3.2);
             }
 
-            if (layoutStyle == "属性在下，围成半圆" || layoutStyle == "属性在上，围成半圆" || layoutStyle == "一圈围成圆环")
+            if (layoutStyle == "一圈围成圆环")
+            {
+                return Math.Max(rowHeight * 5.6, 2.05);
+            }
+
+            if (layoutStyle == "属性在下，围成半圆" || layoutStyle == "属性在上，围成半圆")
             {
                 return Math.Max(rowHeight * 9.0, 3.4);
             }
@@ -927,15 +967,25 @@ namespace VisioDataMapper
         {
             int count = entity.Fields.Count;
             double maxAttrWidth = GetMaxWidth(attrWidths, 0, count);
-            double radiusX = Math.Max(entityWidth / 2.0 + maxAttrWidth / 2.0 + 0.55, Math.Min(3.0, count * 0.32 + 1.0));
-            double radiusY = Math.Max(entityHeight / 2.0 + ellipseHeight + 0.55, fullRing ? 1.15 : 0.95);
+            double radiusX;
+            double radiusY;
+            if (fullRing)
+            {
+                radiusX = GetCompactRingRadiusX(entityWidth, maxAttrWidth, count);
+                radiusY = GetCompactRingRadiusY(entityHeight, ellipseHeight, count);
+            }
+            else
+            {
+                radiusX = Math.Max(entityWidth / 2.0 + maxAttrWidth / 2.0 + 0.55, Math.Min(3.0, count * 0.32 + 1.0));
+                radiusY = Math.Max(entityHeight / 2.0 + ellipseHeight + 0.55, 0.95);
+            }
 
             for (int i = 0; i < entity.Fields.Count; i++)
             {
                 double angle;
                 if (fullRing)
                 {
-                    angle = -90 + i * 360.0 / Math.Max(1, count);
+                    angle = GetCompactRingAngle(i, count);
                 }
                 else if (count == 1)
                 {
@@ -961,6 +1011,56 @@ namespace VisioDataMapper
                 DrawAttribute(page, entity.Fields[i], attrTexts[i], attrX, attrY, attrWidth, ellipseHeight);
                 DrawLine(page, attrEdgeX, attrEdgeY, entityEdgeX, entityEdgeY);
             }
+        }
+
+        private double GetCompactRingRadiusX(double entityWidth, double maxAttrWidth, int count)
+        {
+            double minByShape = entityWidth / 2.0 + maxAttrWidth / 2.0 + 0.22;
+            double minByCount = 0.72 + Math.Min(0.45, Math.Max(0, count - 4) * 0.055);
+            return Math.Max(minByShape, minByCount);
+        }
+
+        private double GetCompactRingRadiusY(double entityHeight, double ellipseHeight, int count)
+        {
+            double minByShape = entityHeight / 2.0 + ellipseHeight / 2.0 + 0.25;
+            double minByCount = 0.68 + Math.Min(0.42, Math.Max(0, count - 4) * 0.06);
+            return Math.Max(minByShape, minByCount);
+        }
+
+        private double GetCompactRingAngle(int index, int count)
+        {
+            double[] preferredAngles;
+            switch (count)
+            {
+                case 1:
+                    preferredAngles = new double[] { 270 };
+                    break;
+                case 2:
+                    preferredAngles = new double[] { 180, 0 };
+                    break;
+                case 3:
+                    preferredAngles = new double[] { 270, 150, 30 };
+                    break;
+                case 4:
+                    preferredAngles = new double[] { 270, 180, 0, 90 };
+                    break;
+                case 5:
+                    preferredAngles = new double[] { 270, 205, 155, 25, 335 };
+                    break;
+                case 6:
+                    preferredAngles = new double[] { 270, 210, 150, 30, 330, 90 };
+                    break;
+                case 7:
+                    preferredAngles = new double[] { 270, 220, 180, 140, 40, 0, 320 };
+                    break;
+                case 8:
+                    preferredAngles = new double[] { 270, 225, 180, 135, 45, 0, 315, 90 };
+                    break;
+                default:
+                    return 270 + index * 360.0 / Math.Max(1, count);
+            }
+
+            return preferredAngles[index];
         }
 
         private void DrawAttribute(Visio.Page page, EntityField field, string text, double centerX, double centerY, double width, double height)
@@ -1160,6 +1260,25 @@ namespace VisioDataMapper
             }
 
             return parsedValue;
+        }
+
+        private double ParseFontSize(object selectedItem)
+        {
+            string fontSizeName = selectedItem == null ? "五号" : selectedItem.ToString();
+            switch (fontSizeName)
+            {
+                case "小三":
+                    return 15;
+                case "四号":
+                    return 14;
+                case "小四":
+                    return 12;
+                case "小五":
+                    return 9;
+                case "五号":
+                default:
+                    return 10.5;
+            }
         }
 
         private void AppendLog(string message)

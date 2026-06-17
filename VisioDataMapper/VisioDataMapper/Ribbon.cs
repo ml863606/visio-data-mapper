@@ -80,8 +80,12 @@ namespace VisioDataMapper
                     return;
                 case "btnERLogical": featureName = "ER图 - 逻辑模型"; break;
                 case "btnERPhysical": featureName = "ER图 - 物理模型"; break;
-                case "btnUseCaseSystem": featureName = "用例图 - 系统用例图"; break;
-                case "btnUseCaseBusiness": featureName = "用例图 - 业务用例图"; break;
+                case "btnUseCaseDiagram":
+                    using (var form = new FormUseCaseDiagram())
+                    {
+                        form.ShowDialog();
+                    }
+                    return;
                 case "btnSeqNormal": featureName = "时序图 - 标准时序图"; break;
                 case "btnSeqLoop": featureName = "时序图 - 循环时序图"; break;
                 case "btnActivityDiagram": featureName = "活动图"; break;

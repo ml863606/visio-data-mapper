@@ -66,10 +66,7 @@
             </menu>
           </box>
           <box id="boxSoftCol2" boxStyle="vertical">
-            <menu id="menuUseCase" label="用例图" showImage="true" imageMso="ResourceAssignment" size="normal">
-              <button id="btnUseCaseSystem" label="系统用例图" showImage="true" imageMso="Permission" onAction="OnAction" />
-              <button id="btnUseCaseBusiness" label="业务用例图" showImage="true" imageMso="ContactCard" onAction="OnAction" />
-            </menu>
+            <button id="btnUseCaseDiagram" label="用例图" showImage="true" imageMso="ResourceAssignment" size="normal" onAction="OnAction" />
             <menu id="menuSeqDiagram" label="时序图" showImage="true" imageMso="ScheduleView" size="normal">
               <button id="btnSeqNormal" label="标准时序图" showImage="true" imageMso="DiagramProcess" onAction="OnAction" />
               <button id="btnSeqLoop" label="循环时序图" showImage="true" imageMso="DiagramCycle" onAction="OnAction" />
