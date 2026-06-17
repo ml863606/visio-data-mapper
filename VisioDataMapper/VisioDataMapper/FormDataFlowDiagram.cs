@@ -716,22 +716,22 @@ namespace VisioDataMapper
             // 4. 调用 Visio 强大的流程图网状布局自动整理算法，瞬间让全图直角规范排列
             try
             {
-                Visio.Cell placeStyleCell = activePage.PageSheet.CellsU["PlaceStyle"];
-                placeStyleCell.Formula = "1"; // 等同于 Visio 流程图布局的自上而下/自左而右智能排列方式
-            }
-            catch { }
+                Visio.Shape pageSheet = activePage.PageSheet;
+                pageSheet.CellsU["PlaceStyle"].Formula = "1"; // 流程图自上而下排版
+                pageSheet.CellsU["RouteStyle"].Formula = "5"; // 正交折线路由
 
-            try
-            {
-                Visio.Cell routeStyleCell = activePage.PageSheet.CellsU["RouteStyle"];
-                routeStyleCell.Formula = "5"; // 强制连线选择优雅的直角路径
+                // 方案 A 避让与宽松间距设置
+                pageSheet.CellsU["AvenueSizeX"].FormulaU = "2.0 in";      // 节点水平间距，拉大以提供走线通道
+                pageSheet.CellsU["AvenueSizeY"].FormulaU = "2.0 in";      // 节点垂直间距
+                pageSheet.CellsU["LineToNodeGap"].FormulaU = "0.20 in";   // 连线距节点的避让安全空隙
+                pageSheet.CellsU["LineToLineGap"].FormulaU = "0.15 in";   // 折线重合避让空隙，使多根线分离
             }
             catch { }
 
             // 自动重排
             activePage.Layout();
 
-            AppendLog("生成数据流图绘图成功！");
+            AppendLog("生成数据流图绘图成功！已应用方案 A 避让优化。");
             MessageBox.Show("数据流图生成成功！已应用智能避让与正交连线布局。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
@@ -873,6 +873,9 @@ namespace VisioDataMapper
                 TrySetFormula(shape, "RightMargin", "0");
                 TrySetFormula(shape, "TopMargin", "0");
                 TrySetFormula(shape, "BottomMargin", "0");
+
+                // 将形状声明为避让障碍物，连线必须从外侧绕行
+                TrySetFormula(shape, "ObjType", "2");
             }
             catch { }
         }
