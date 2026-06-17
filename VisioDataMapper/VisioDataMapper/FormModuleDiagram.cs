@@ -45,6 +45,8 @@ namespace VisioDataMapper
         private string currentFontName = "宋体";
         private double currentFontSizePt = 10.5;
         private double currentLineWidthPt = 0.75;
+        private const double RootTopMarginInch = 1.45;
+        private const double RootTopExtraGapInch = 0.35;
         
         private const string StructurePrompt = "上面是我的功能模块资料，根据资料里的内容，帮我输出一个功能模块图 JSON 格式数据。要求格式如下：\n{\n  \"sys_name\": \"系统名称\",\n  \"platform\": [\n    {\n      \"name\": \"平台/角色名称\",\n      \"module\": [\n        {\n          \"name\": \"模块名称\",\n          \"sub\": [\n            \"功能名称1\",\n            \"功能名称2\"\n          ]\n        }\n      ]\n    }\n  ]\n}";
 
@@ -636,7 +638,7 @@ namespace VisioDataMapper
                 else
                 {
                     root.X = pageWidth / 2.0; // horizontal center
-                    root.Y = pageHeight - 1.45; // leave room for framed title
+                    root.Y = pageHeight - RootTopMarginInch - RootTopExtraGapInch; // leave extra room under the title
                 }
 
                 // Step 2: Compute absolute coordinates
