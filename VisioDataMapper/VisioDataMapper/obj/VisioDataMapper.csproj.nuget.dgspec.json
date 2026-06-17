@@ -1,0 +1,72 @@
+{
+  "format": 1,
+  "restore": {
+    "D:\\WorkSpace\\mxl\\ai-tool\\visio-data-mapper\\VisioDataMapper\\VisioDataMapper\\VisioDataMapper.csproj": {}
+  },
+  "projects": {
+    "D:\\WorkSpace\\mxl\\ai-tool\\visio-data-mapper\\VisioDataMapper\\VisioDataMapper\\VisioDataMapper.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\WorkSpace\\mxl\\ai-tool\\visio-data-mapper\\VisioDataMapper\\VisioDataMapper\\VisioDataMapper.csproj",
+        "projectName": "VisioDataMapper",
+        "projectPath": "D:\\WorkSpace\\mxl\\ai-tool\\visio-data-mapper\\VisioDataMapper\\VisioDataMapper\\VisioDataMapper.csproj",
+        "packagesPath": "C:\\Users\\mxl\\.nuget\\packages\\",
+        "outputPath": "D:\\WorkSpace\\mxl\\ai-tool\\visio-data-mapper\\VisioDataMapper\\VisioDataMapper\\obj\\",
+        "projectStyle": "PackageReference",
+        "skipContentFileWrite": true,
+        "UsingMicrosoftNETSdk": false,
+        "fallbackFolders": [
+          "D:\\DevSoftWare\\DevTool\\Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\mxl\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net48"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net48": {
+            "framework": "net48",
+            "projectReferences": {}
+          }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net48": {
+          "framework": "net48",
+          "dependencies": {
+            "Microsoft.Msagl": {
+              "target": "Package",
+              "version": "[1.1.6, )"
+            }
+          }
+        }
+      },
+      "runtimes": {
+        "win": {
+          "#import": []
+        },
+        "win-arm64": {
+          "#import": []
+        },
+        "win-x64": {
+          "#import": []
+        },
+        "win-x86": {
+          "#import": []
+        }
+      }
+    }
+  }
+}

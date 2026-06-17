@@ -35,6 +35,9 @@ namespace VisioDataMapper
         private Button btnGenerate;
         private Button btnClose;
 
+        private Label lblLayoutScheme;
+        private ComboBox cmbLayoutScheme;
+
         private string currentFontName = "宋体";
         private double currentFontSizePt = 10.5;
 
@@ -239,6 +242,11 @@ namespace VisioDataMapper
             cmbStoreStyle.Items.AddRange(new string[] { "小正方形+两横线", "三边矩形(右开口)" });
             cmbStoreStyle.SelectedIndex = 0;
 
+            lblLayoutScheme = new Label { Text = "排版方案:", Location = new Point(620, 20), AutoSize = true };
+            cmbLayoutScheme = new ComboBox { Location = new Point(690, 16), Size = new Size(160, 25), DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbLayoutScheme.Items.AddRange(new string[] { "方案 A (Visio避让)", "方案 B (拓扑分层布局)", "方案 C (DFD语义分区)" });
+            cmbLayoutScheme.SelectedIndex = 0;
+
             lblConnectorStyle = new Label { Text = "连接线:", Location = new Point(15, 65), AutoSize = true };
             cmbConnectorStyle = new ComboBox { Location = new Point(80, 61), Size = new Size(140, 25), DropDownStyle = ComboBoxStyle.DropDownList };
             cmbConnectorStyle.Items.AddRange(new string[] { "绑定新增连接点", "普通动态连线" });
@@ -282,6 +290,8 @@ namespace VisioDataMapper
             pnlOptions.Controls.Add(cmbProcessStyle);
             pnlOptions.Controls.Add(lblStoreStyle);
             pnlOptions.Controls.Add(cmbStoreStyle);
+            pnlOptions.Controls.Add(lblLayoutScheme);
+            pnlOptions.Controls.Add(cmbLayoutScheme);
             pnlOptions.Controls.Add(lblConnectorStyle);
             pnlOptions.Controls.Add(cmbConnectorStyle);
             pnlOptions.Controls.Add(lblSpacing);
@@ -430,11 +440,14 @@ namespace VisioDataMapper
                     continue;
                 }
 
-                // 匹配节点定义
                 Match nodeM = nodeRegex.Match(trimmed);
                 if (nodeM.Success)
                 {
                     string id = nodeM.Groups[1].Value;
+                    string idLower = id.ToLower();
+                    if (idLower == "node" || idLower == "edge" || idLower == "graph" || idLower == "digraph")
+                        continue;
+
                     string attrs = nodeM.Groups[2].Value;
 
                     string label = id;
@@ -617,19 +630,148 @@ namespace VisioDataMapper
             // 建立快速索引字典
             var indexToNodeMap = nodeList.ToDictionary(n => n.Index);
 
-            // 2. 在画布上按简易的网格进行初步分布排布（以便 Visio 的 Layout 能顺利解析相对位置并整理）
+            // 如果选择了方案 B 或方案 C，则使用对应的拓扑排版算法提前计算绝对坐标
+            Dictionary<int, Tuple<double, double>> sugiyamaCoords = null;
+            string selectedScheme = cmbLayoutScheme.SelectedItem?.ToString() ?? "方案 A (Visio避让)";
+
+            if (selectedScheme.Contains("方案 B"))
+            {
+                try
+                {
+                    var layout = new DfdSugiyamaLayout();
+                    var layoutNodes = nodeList.Select(n => new DfdSugiyamaLayout.LayoutNode
+                    {
+                        Index = n.Index,
+                        Text = n.Text,
+                        Type = n.Type
+                    }).ToList();
+
+                    var layoutEdges = new List<DfdSugiyamaLayout.LayoutEdge>();
+                    foreach (var n in nodeList)
+                    {
+                        foreach (var nextIdx in n.NextIndices)
+                        {
+                            layoutEdges.Add(new DfdSugiyamaLayout.LayoutEdge { From = n.Index, To = nextIdx });
+                        }
+                    }
+
+                    // 进行 Sugiyama 层次坐标分析（左右 LR 拓扑流向）
+                    sugiyamaCoords = layout.CalculateLayout(
+                        layoutNodes,
+                        layoutEdges,
+                        pageWidth,
+                        pageHeight,
+                        1.8 + horSpacingInch,
+                        1.2 + verSpacingInch,
+                        "LR"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    AppendLog($"[警告] 方案 B 布局计算异常，已退回到简易网格: {ex.Message}");
+                }
+            }
+            else if (selectedScheme.Contains("方案 C"))
+            {
+                try
+                {
+                    var layout = new DfdSemanticLayout();
+                    var layoutNodes = nodeList.Select(n => new DfdSemanticLayout.LayoutNode
+                    {
+                        Index = n.Index,
+                        Text = n.Text,
+                        Type = n.Type
+                    }).ToList();
+
+                    var layoutEdges = new List<DfdSemanticLayout.LayoutEdge>();
+                    foreach (var n in nodeList)
+                    {
+                        foreach (var nextIdx in n.NextIndices)
+                        {
+                            layoutEdges.Add(new DfdSemanticLayout.LayoutEdge { From = n.Index, To = nextIdx });
+                        }
+                    }
+
+                    // 进行 DFD 语义分区坐标计算
+                    sugiyamaCoords = layout.CalculateLayout(
+                        layoutNodes,
+                        layoutEdges,
+                        pageWidth,
+                        pageHeight,
+                        horSpacingInch,
+                        verSpacingInch
+                    );
+
+                    // 语义布局算法通过特殊键 -1/-2 传递计算出的有效画布尺寸
+                    if (sugiyamaCoords.ContainsKey(-1))
+                    {
+                        double newWidth = sugiyamaCoords[-1].Item1;
+                        double newHeight = sugiyamaCoords[-1].Item2;
+                        sugiyamaCoords.Remove(-1); // 移除特殊键，不影响后续节点遍历
+
+                        if (newWidth > pageWidth)
+                        {
+                            pageWidth = newWidth;
+                            activePage.PageSheet.CellsU["PageWidth"].FormulaU = $"{pageWidth} in";
+                        }
+                        if (newHeight > pageHeight)
+                        {
+                            pageHeight = newHeight;
+                            activePage.PageSheet.CellsU["PageHeight"].FormulaU = $"{pageHeight} in";
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AppendLog($"[警告] 方案 C 布局计算异常，已退回到简易网格: {ex.Message}");
+                }
+            }
+
+            // 动态扩增画布大小，确保拓扑分层图有足够的空间排布，绝对不发生重合挤压
+            if (sugiyamaCoords != null && sugiyamaCoords.Count > 0)
+            {
+                try
+                {
+                    double maxX = sugiyamaCoords.Values.Max(c => c.Item1);
+                    double maxY = sugiyamaCoords.Values.Max(c => c.Item2);
+
+                    if (maxX > pageWidth - 1.5)
+                    {
+                        pageWidth = maxX + 2.0;
+                        activePage.PageSheet.CellsU["PageWidth"].FormulaU = $"{pageWidth} in";
+                    }
+                    if (maxY > pageHeight - 1.5)
+                    {
+                        pageHeight = maxY + 2.0;
+                        activePage.PageSheet.CellsU["PageHeight"].FormulaU = $"{pageHeight} in";
+                    }
+                }
+                catch { }
+            }
+
+            // 2. 在画布上安置并绘制各节点
             int columns = (int)Math.Ceiling(Math.Sqrt(nodeList.Count));
-            double startX = 1.0;
-            double startY = pageHeight - 1.5;
+            double startGridX = 1.0;
+            double startGridY = pageHeight - 1.5;
 
             for (int i = 0; i < nodeList.Count; i++)
             {
                 var node = nodeList[i];
-                int col = i % columns;
-                int row = i / columns;
+                double initialX = 0;
+                double initialY = 0;
 
-                double initialX = startX + col * (1.8 + horSpacingInch);
-                double initialY = startY - row * (1.2 + verSpacingInch);
+                if (sugiyamaCoords != null && sugiyamaCoords.ContainsKey(node.Index))
+                {
+                    initialX = sugiyamaCoords[node.Index].Item1;
+                    initialY = sugiyamaCoords[node.Index].Item2;
+                }
+                else
+                {
+                    int col = i % columns;
+                    int row = i / columns;
+                    initialX = startGridX + col * (1.8 + horSpacingInch);
+                    initialY = startGridY - row * (1.2 + verSpacingInch);
+                }
 
                 // 根据类型绘制不同的学术单色风形状
                 Visio.Shape shape = null;
@@ -717,22 +859,40 @@ namespace VisioDataMapper
             try
             {
                 Visio.Shape pageSheet = activePage.PageSheet;
-                pageSheet.CellsU["PlaceStyle"].Formula = "1"; // 流程图自上而下排版
                 pageSheet.CellsU["RouteStyle"].Formula = "5"; // 正交折线路由
-
-                // 方案 A 避让与宽松间距设置
-                pageSheet.CellsU["AvenueSizeX"].FormulaU = "2.0 in";      // 节点水平间距，拉大以提供走线通道
-                pageSheet.CellsU["AvenueSizeY"].FormulaU = "2.0 in";      // 节点垂直间距
                 pageSheet.CellsU["LineToNodeGap"].FormulaU = "0.20 in";   // 连线距节点的避让安全空隙
                 pageSheet.CellsU["LineToLineGap"].FormulaU = "0.15 in";   // 折线重合避让空隙，使多根线分离
+
+                if (selectedScheme.Contains("方案 A"))
+                {
+                    pageSheet.CellsU["PlaceStyle"].Formula = "1"; // 流程图自上而下排版
+                    pageSheet.CellsU["AvenueSizeX"].FormulaU = "2.0 in";      // 节点水平间距，拉大以提供走线通道
+                    pageSheet.CellsU["AvenueSizeY"].FormulaU = "2.0 in";      // 节点垂直间距
+                }
+                else
+                {
+                    // 方案 B / 方案 C 禁用 PlaceStyle 排版（防止 Visio 复盖我们的拓扑算法精准坐标）
+                    pageSheet.CellsU["PlaceStyle"].Formula = "0";
+                }
             }
             catch { }
 
-            // 自动重排
-            activePage.Layout();
+            // 只有方案 A 才需要整体重排，方案 B 和 C 的节点已经利用算法计算出坐标精准落位
+            if (selectedScheme.Contains("方案 A"))
+            {
+                activePage.Layout();
+                AppendLog("生成数据流图绘图成功！已应用方案 A 避让优化。");
+            }
+            else if (selectedScheme.Contains("方案 B"))
+            {
+                AppendLog("生成数据流图绘图成功！已应用方案 B (Sugiyama 拓扑分层) 布局算法。");
+            }
+            else
+            {
+                AppendLog("生成数据流图绘图成功！已应用方案 C (DFD 语义分区) 布局算法。");
+            }
 
-            AppendLog("生成数据流图绘图成功！已应用方案 A 避让优化。");
-            MessageBox.Show("数据流图生成成功！已应用智能避让与正交连线布局。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("数据流图生成成功！已完成避让与正交连线布局。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         // --- 高级特殊 DFD 样式组装助手 ---
