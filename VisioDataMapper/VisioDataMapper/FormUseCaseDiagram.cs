@@ -15,10 +15,15 @@ namespace VisioDataMapper
         private Button btnGenerate;
         private Button btnClose;
         private TextBox txtTitle;
+        private Panel pnlTitleBorder;
+        private Label lblTitle;
         private TextBox txtStatus;
+        private Panel pnlStatusBorder;
         private TabControl tabActors;
+        private Panel pnlTabContainer;
         private TabPage tabJson;
         private TextBox txtJsonInput;
+        private Panel pnlOptions;
         private ComboBox cmbActorShape;
         private ComboBox cmbFontName;
         private ComboBox cmbFontSize;
@@ -50,114 +55,267 @@ namespace VisioDataMapper
         private void InitializeComponent()
         {
             Text = "智能画图-用例图";
-            Size = new Size(960, 900);
-            MinimumSize = new Size(900, 820);
+            Size = new Size(900, 850);
+            MinimumSize = new Size(900, 780);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.Sizable;
             MaximizeBox = true;
             MinimizeBox = false;
             Font defaultFont = new Font("Microsoft YaHei", 9F, FontStyle.Regular);
             Font = defaultFont;
+            this.BackColor = Color.FromArgb(240, 244, 248);
 
             Label lblTip = new Label
             {
-                Text = "请将UML用例JSON复制到剪贴板，点击导入JSON后按参与者生成多页表格",
-                Location = new Point(15, 15),
-                Size = new Size(470, 25),
-                ForeColor = Color.DarkRed
+                Text = "请将UML用例JSON复制到剪贴板，点击导入JSON后自动渲染。",
+                Location = new Point(15, 20),
+                AutoSize = true,
+                ForeColor = Color.FromArgb(90, 107, 124),
+                Font = new Font("Microsoft YaHei", 9.5F, FontStyle.Regular)
             };
 
-            btnImportJson = new Button { Text = "导入JSON", Location = new Point(15, 50), Size = new Size(130, 44) };
+            btnImportJson = new Button 
+            { 
+                Text = "导入JSON", 
+                Location = new Point(15, 50), 
+                Size = new Size(130, 36),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(0, 122, 255),
+                ForeColor = Color.White,
+                Font = new Font("Microsoft YaHei", 9.5F, FontStyle.Bold),
+                TabStop = false,
+                UseVisualStyleBackColor = false,
+                Cursor = Cursors.Hand
+            };
+            btnImportJson.FlatAppearance.BorderSize = 0;
+            btnImportJson.FlatAppearance.MouseDownBackColor = Color.FromArgb(0, 105, 219);
+            btnImportJson.FlatAppearance.MouseOverBackColor = Color.FromArgb(0, 130, 255);
             btnImportJson.Click += btnImportJson_Click;
 
-            Label lblTitle = new Label { Text = "大标题:", Location = new Point(455, 61), Size = new Size(70, 24), TextAlign = ContentAlignment.MiddleRight };
-            txtTitle = new TextBox { Location = new Point(535, 59), Size = new Size(340, 26), Text = systemName };
+            lblTitle = new Label 
+            { 
+                Text = "大标题:", 
+                AutoSize = true,
+                ForeColor = Color.FromArgb(74, 85, 104),
+                Font = new Font("Microsoft YaHei", 9.5F, FontStyle.Regular)
+            };
+            
+            pnlTitleBorder = new Panel
+            {
+                BackColor = Color.FromArgb(218, 224, 233),
+                Padding = new Padding(1),
+                Location = new Point(535, 54),
+                Size = new Size(340, 28)
+            };
+            txtTitle = new TextBox 
+            { 
+                Text = systemName,
+                BorderStyle = BorderStyle.None,
+                Dock = DockStyle.Fill,
+                Font = new Font("Microsoft YaHei", 10F, FontStyle.Regular),
+                BackColor = Color.White
+            };
+            pnlTitleBorder.Controls.Add(txtTitle);
+
+            pnlTabContainer = new Panel
+            {
+                Location = new Point(15, 100),
+                Size = new Size(860, 455),
+                BorderStyle = BorderStyle.None
+            };
 
             tabActors = new TabControl
             {
-                Location = new Point(15, 110),
-                Size = new Size(860, 455)
+                Location = new Point(-2, -2),
+                Size = new Size(864, 459),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular),
+                DrawMode = TabDrawMode.OwnerDrawFixed,
+                Padding = new Point(15, 6)
             };
+            tabActors.DrawItem += (s, e) =>
+            {
+                var tabCtrl = (TabControl)s;
+                var tabPage = tabCtrl.TabPages[e.Index];
+                var tabRect = tabCtrl.GetTabRect(e.Index);
+                tabRect.Inflate(2, 2);
+
+                bool isSelected = tabCtrl.SelectedIndex == e.Index;
+                using (var bgBrush = new SolidBrush(isSelected ? Color.White : Color.FromArgb(226, 232, 240)))
+                {
+                    e.Graphics.FillRectangle(bgBrush, tabRect);
+                }
+
+                using (var textBrush = new SolidBrush(isSelected ? Color.FromArgb(0, 122, 255) : Color.FromArgb(100, 116, 139)))
+                {
+                    string text = tabPage.Text;
+                    var sf = new StringFormat
+                    {
+                        Alignment = StringAlignment.Center,
+                        LineAlignment = StringAlignment.Center
+                    };
+                    using (var font = new Font(tabCtrl.Font, isSelected ? FontStyle.Bold : FontStyle.Regular))
+                    {
+                        e.Graphics.DrawString(text, font, textBrush, tabRect, sf);
+                    }
+                }
+            };
+            pnlTabContainer.Controls.Add(tabActors);
 
             tabJson = new TabPage("JSON数据");
+            tabJson.BackColor = Color.White;
             txtJsonInput = new TextBox
             {
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical,
                 Dock = DockStyle.Fill,
                 Font = new Font("Consolas", 10F, FontStyle.Regular),
-                Text = string.Empty
+                Text = string.Empty,
+                BorderStyle = BorderStyle.None,
+                BackColor = Color.White
             };
             txtJsonInput.TextChanged += txtJsonInput_TextChanged;
             tabJson.Controls.Add(txtJsonInput);
             tabActors.TabPages.Add(tabJson);
 
+            pnlStatusBorder = new Panel
+            {
+                BackColor = Color.FromArgb(218, 224, 233),
+                Padding = new Padding(1),
+                Location = new Point(15, 580),
+                Size = new Size(860, 78)
+            };
             txtStatus = new TextBox
             {
-                Location = new Point(15, 580),
-                Size = new Size(860, 78),
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical,
                 ReadOnly = true,
-                BackColor = SystemColors.Control,
-                ForeColor = Color.DimGray,
+                BackColor = Color.FromArgb(248, 250, 252),
+                ForeColor = Color.FromArgb(100, 116, 139),
+                BorderStyle = BorderStyle.None,
+                Dock = DockStyle.Fill,
                 Text = $"{DateTime.Now:HH:mm:ss} 请在上方“JSON数据”文本框中粘贴JSON进行渲染。"
             };
+            pnlStatusBorder.Controls.Add(txtStatus);
 
-            lblActorShape = new Label { Text = "参与者形状:", Location = new Point(20, 700), Size = new Size(90, 24), TextAlign = ContentAlignment.MiddleLeft };
-            cmbActorShape = new ComboBox { Location = new Point(120, 697), Size = new Size(170, 26), DropDownStyle = ComboBoxStyle.DropDownList };
+            lblActorShape = new Label { Text = "参与者形状:", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(3, 6, 3, 3) };
+            cmbActorShape = new ComboBox { Size = new Size(110, 26), DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular), Margin = new Padding(3, 3, 15, 3) };
             cmbActorShape.Items.AddRange(new string[] { "Draw.Io风格", "Visio自带" });
             cmbActorShape.SelectedIndex = 0;
 
-            chkEnglishRelationText = new CheckBox { Text = "关系线条使用英文字符", Location = new Point(310, 700), Size = new Size(170, 24), Checked = true };
-            chkShowFunctionNodes = new CheckBox { Text = "显示功能节点", Location = new Point(500, 700), Size = new Size(125, 24), Checked = true };
-            chkUseCaseOutline = new CheckBox { Text = "模块/功能添加外边框", Location = new Point(645, 700), Size = new Size(165, 24), Checked = true };
+            chkEnglishRelationText = new CheckBox { Text = "关系线条使用英文字符", AutoSize = true, Checked = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(5, 5, 15, 3) };
+            chkShowFunctionNodes = new CheckBox { Text = "显示功能节点", AutoSize = true, Checked = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(5, 5, 15, 3) };
+            chkUseCaseOutline = new CheckBox { Text = "模块/功能添加外边框", AutoSize = true, Checked = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(5, 5, 15, 3) };
 
-            lblLayout = new Label { Text = "排版:", Location = new Point(20, 742), Size = new Size(70, 24), TextAlign = ContentAlignment.MiddleLeft };
-            cmbLayout = new ComboBox { Location = new Point(80, 739), Size = new Size(190, 26), DropDownStyle = ComboBoxStyle.DropDownList };
+            lblLayout = new Label { Text = "排版:", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(3, 6, 3, 3) };
+            cmbLayout = new ComboBox { Size = new Size(130, 26), DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular), Margin = new Padding(3, 3, 15, 3) };
             cmbLayout.Items.AddRange(new string[] { "参与者均在左侧", "参与者均在右侧", "参与者左右分布" });
             cmbLayout.SelectedIndex = 0;
 
-            lblFontName = new Label { Text = "字体:", Location = new Point(290, 742), Size = new Size(45, 24), TextAlign = ContentAlignment.MiddleLeft };
-            cmbFontName = CreateFontCombo(new Point(335, 739));
-            lblFontSize = new Label { Text = "字号:", Location = new Point(455, 742), Size = new Size(45, 24), TextAlign = ContentAlignment.MiddleLeft };
-            cmbFontSize = CreateFontSizeCombo(new Point(500, 739));
+            lblFontName = new Label { Text = "字体:", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(3, 6, 3, 3) };
+            cmbFontName = CreateFontCombo(new Point(0, 0));
+            cmbFontName.Margin = new Padding(3, 3, 15, 3);
+            lblFontSize = new Label { Text = "字号:", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(3, 6, 3, 3) };
+            cmbFontSize = CreateFontSizeCombo(new Point(0, 0));
+            cmbFontSize.Margin = new Padding(3, 3, 15, 3);
 
-            lblSpacing = new Label { Text = "横纵间距:", Location = new Point(20, 784), Size = new Size(78, 24), TextAlign = ContentAlignment.MiddleLeft };
-            txtHorizontalSpacing = new TextBox { Text = "15", Location = new Point(100, 781), Size = new Size(48, 26) };
-            txtVerticalSpacing = new TextBox { Text = "8", Location = new Point(160, 781), Size = new Size(48, 26) };
-            lblMillimeter = new Label { Text = "mm", Location = new Point(216, 784), Size = new Size(35, 24) };
-            chkAssociationArrow = new CheckBox { Text = "关联连线画箭头", Location = new Point(310, 777), Size = new Size(145, 24), Checked = false };
+            lblSpacing = new Label { Text = "横纵间距:", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(3, 6, 3, 3) };
+            
+            Panel pnlHorSpacingBorder = new Panel { BackColor = Color.FromArgb(218, 224, 233), Padding = new Padding(1), Size = new Size(40, 24), Margin = new Padding(3, 3, 5, 3) };
+            txtHorizontalSpacing = new TextBox { Text = "15", BorderStyle = BorderStyle.None, Dock = DockStyle.Fill, Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular), TextAlign = HorizontalAlignment.Center };
+            pnlHorSpacingBorder.Controls.Add(txtHorizontalSpacing);
 
-            btnGenerate = new Button { Text = "生成绘图", Location = new Point(610, 744), Size = new Size(120, 48), BackColor = Color.LightSkyBlue, Font = new Font(defaultFont, FontStyle.Bold) };
+            Panel pnlVerSpacingBorder = new Panel { BackColor = Color.FromArgb(218, 224, 233), Padding = new Padding(1), Size = new Size(40, 24), Margin = new Padding(3, 3, 5, 3) };
+            txtVerticalSpacing = new TextBox { Text = "8", BorderStyle = BorderStyle.None, Dock = DockStyle.Fill, Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular), TextAlign = HorizontalAlignment.Center };
+            pnlVerSpacingBorder.Controls.Add(txtVerticalSpacing);
+
+            lblMillimeter = new Label { Text = "mm", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(0, 6, 15, 3) };
+            chkAssociationArrow = new CheckBox { Text = "关联连线画箭头", AutoSize = true, Checked = false, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(5, 5, 15, 3) };
+
+            btnGenerate = new Button 
+            { 
+                Text = "生成绘图", 
+                Size = new Size(120, 36), 
+                BackColor = Color.FromArgb(40, 167, 69), 
+                ForeColor = Color.White, 
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Microsoft YaHei", 10F, FontStyle.Bold),
+                TabStop = false,
+                UseVisualStyleBackColor = false,
+                Cursor = Cursors.Hand
+            };
+            btnGenerate.FlatAppearance.BorderSize = 0;
+            btnGenerate.FlatAppearance.MouseDownBackColor = Color.FromArgb(35, 150, 62);
+            btnGenerate.FlatAppearance.MouseOverBackColor = Color.FromArgb(46, 184, 77);
             btnGenerate.Click += btnGenerate_Click;
-            btnClose = new Button { Text = "关闭", Location = new Point(760, 744), Size = new Size(115, 48) };
+
+            btnClose = new Button 
+            { 
+                Text = "关闭", 
+                Size = new Size(100, 36),
+                BackColor = Color.FromArgb(233, 236, 239),
+                ForeColor = Color.FromArgb(73, 80, 87),
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Microsoft YaHei", 9.5F, FontStyle.Regular),
+                TabStop = false,
+                UseVisualStyleBackColor = false,
+                Cursor = Cursors.Hand
+            };
+            btnClose.FlatAppearance.BorderSize = 0;
+            btnClose.FlatAppearance.MouseDownBackColor = Color.FromArgb(215, 218, 222);
+            btnClose.FlatAppearance.MouseOverBackColor = Color.FromArgb(241, 243, 245);
             btnClose.Click += btnClose_Click;
+
+            pnlOptions = new Panel
+            {
+                BackColor = Color.White,
+                BorderStyle = BorderStyle.None,
+                Height = 135
+            };
+            pnlOptions.Paint += (s, pe) =>
+            {
+                using (var pen = new Pen(Color.FromArgb(218, 224, 233), 1))
+                {
+                    pe.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    pe.Graphics.DrawRectangle(pen, 0, 0, pnlOptions.Width - 1, pnlOptions.Height - 1);
+                }
+            };
+
+            FlowLayoutPanel row1 = new FlowLayoutPanel { Location = new Point(5, 5), Size = new Size(700, 36), Padding = new Padding(0) };
+            row1.Controls.Add(lblActorShape);
+            row1.Controls.Add(cmbActorShape);
+            row1.Controls.Add(chkEnglishRelationText);
+            row1.Controls.Add(chkShowFunctionNodes);
+            row1.Controls.Add(chkUseCaseOutline);
+
+            FlowLayoutPanel row2 = new FlowLayoutPanel { Location = new Point(5, 45), Size = new Size(700, 36), Padding = new Padding(0) };
+            row2.Controls.Add(lblLayout);
+            row2.Controls.Add(cmbLayout);
+            row2.Controls.Add(lblFontName);
+            row2.Controls.Add(cmbFontName);
+            row2.Controls.Add(lblFontSize);
+            row2.Controls.Add(cmbFontSize);
+
+            FlowLayoutPanel row3 = new FlowLayoutPanel { Location = new Point(5, 85), Size = new Size(500, 40), Padding = new Padding(0) };
+            row3.Controls.Add(lblSpacing);
+            row3.Controls.Add(pnlHorSpacingBorder);
+            row3.Controls.Add(pnlVerSpacingBorder);
+            row3.Controls.Add(lblMillimeter);
+            row3.Controls.Add(chkAssociationArrow);
+
+            pnlOptions.Controls.Add(row1);
+            pnlOptions.Controls.Add(row2);
+            pnlOptions.Controls.Add(row3);
+            pnlOptions.Controls.Add(btnGenerate);
+            pnlOptions.Controls.Add(btnClose);
 
             Controls.Add(lblTip);
             Controls.Add(btnImportJson);
             Controls.Add(lblTitle);
-            Controls.Add(txtTitle);
-            Controls.Add(tabActors);
-            Controls.Add(txtStatus);
-            Controls.Add(lblActorShape);
-            Controls.Add(cmbActorShape);
-            Controls.Add(chkEnglishRelationText);
-            Controls.Add(chkShowFunctionNodes);
-            Controls.Add(chkUseCaseOutline);
-            Controls.Add(lblLayout);
-            Controls.Add(cmbLayout);
-            Controls.Add(lblFontName);
-            Controls.Add(cmbFontName);
-            Controls.Add(lblFontSize);
-            Controls.Add(cmbFontSize);
-            Controls.Add(lblSpacing);
-            Controls.Add(txtHorizontalSpacing);
-            Controls.Add(txtVerticalSpacing);
-            Controls.Add(lblMillimeter);
-            Controls.Add(chkAssociationArrow);
-            Controls.Add(btnGenerate);
-            Controls.Add(btnClose);
+            Controls.Add(pnlTitleBorder);
+            Controls.Add(pnlTabContainer);
+            Controls.Add(pnlStatusBorder);
+            Controls.Add(pnlOptions);
 
             Resize += FormUseCaseDiagram_Resize;
             LayoutControls();
@@ -181,7 +339,29 @@ namespace VisioDataMapper
             grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Index", HeaderText = "序号", FillWeight = 42 });
             grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Module", HeaderText = "模块", FillWeight = 130 });
             grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Function", HeaderText = "功能", FillWeight = 170 });
+            ApplyGridStyle(grid);
             return grid;
+        }
+
+        private void ApplyGridStyle(DataGridView grid)
+        {
+            grid.BorderStyle = BorderStyle.None;
+            grid.BackgroundColor = Color.White;
+            grid.GridColor = Color.FromArgb(230, 235, 240);
+            grid.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
+            grid.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
+            
+            grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(240, 244, 248);
+            grid.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(73, 80, 87);
+            grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(240, 244, 248);
+            grid.ColumnHeadersDefaultCellStyle.Font = new Font("Microsoft YaHei", 9F, FontStyle.Bold);
+            grid.EnableHeadersVisualStyles = false;
+
+            grid.DefaultCellStyle.BackColor = Color.White;
+            grid.DefaultCellStyle.ForeColor = Color.FromArgb(45, 55, 72);
+            grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(230, 242, 255);
+            grid.DefaultCellStyle.SelectionForeColor = Color.FromArgb(0, 122, 255);
+            grid.DefaultCellStyle.Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular);
         }
 
         private ComboBox CreateFontCombo(Point location)
@@ -202,44 +382,37 @@ namespace VisioDataMapper
 
         private void LayoutControls()
         {
-            if (tabActors == null)
+            if (tabActors == null || pnlOptions == null)
             {
                 return;
             }
 
             int margin = 15;
             int width = Math.Max(820, ClientSize.Width - margin * 2);
-            int buttonTop = ClientSize.Height - 62;
-            int optionRow2Top = buttonTop - 45;
-            int optionRow1Top = optionRow2Top - 42;
-            int statusBottom = optionRow1Top - 15;
-            txtTitle.Left = Math.Max(535, margin + width - txtTitle.Width);
-            tabActors.Width = width;
-            tabActors.Height = Math.Max(300, statusBottom - 105 - tabActors.Top);
-            txtStatus.Top = tabActors.Bottom + 15;
-            txtStatus.Width = width;
-            txtStatus.Height = Math.Max(54, statusBottom - txtStatus.Top);
 
-            lblActorShape.Top = optionRow1Top;
-            cmbActorShape.Top = optionRow1Top - 3;
-            chkEnglishRelationText.Top = optionRow1Top;
-            chkShowFunctionNodes.Top = optionRow1Top;
-            chkUseCaseOutline.Top = optionRow1Top;
-            lblLayout.Top = optionRow2Top;
-            cmbLayout.Top = optionRow2Top - 3;
-            lblFontName.Top = optionRow2Top;
-            cmbFontName.Top = optionRow2Top - 3;
-            lblFontSize.Top = optionRow2Top;
-            cmbFontSize.Top = optionRow2Top - 3;
-            lblSpacing.Top = buttonTop + 12;
-            txtHorizontalSpacing.Top = buttonTop + 9;
-            txtVerticalSpacing.Top = buttonTop + 9;
-            lblMillimeter.Top = buttonTop + 12;
-            chkAssociationArrow.Top = buttonTop + 12;
-            btnGenerate.Top = buttonTop;
-            btnClose.Top = buttonTop;
-            btnClose.Left = margin + width - btnClose.Width;
-            btnGenerate.Left = btnClose.Left - btnGenerate.Width - 25;
+            // Reposition top elements
+            pnlTitleBorder.Left = Math.Max(535, margin + width - pnlTitleBorder.Width);
+            lblTitle.Top = pnlTitleBorder.Top + 4;
+            lblTitle.Left = pnlTitleBorder.Left - lblTitle.Width - 10;
+
+            // Reposition panel at the bottom
+            pnlOptions.Width = width;
+            pnlOptions.Location = new Point(margin, ClientSize.Height - pnlOptions.Height - margin);
+
+            // Reposition log box just above pnlOptions
+            pnlStatusBorder.Width = width;
+            pnlStatusBorder.Height = 65;
+            pnlStatusBorder.Top = pnlOptions.Top - pnlStatusBorder.Height - margin;
+
+            // Reposition tab control in the middle
+            pnlTabContainer.Width = width;
+            pnlTabContainer.Height = Math.Max(200, pnlStatusBorder.Top - pnlTabContainer.Top - margin);
+
+            // Inside panel, reposition buttons dynamically to match right side
+            btnClose.Top = 85;
+            btnClose.Left = pnlOptions.Width - 15 - btnClose.Width;
+            btnGenerate.Top = 85;
+            btnGenerate.Left = btnClose.Left - 15 - btnGenerate.Width;
         }
 
         private void FormUseCaseDiagram_Resize(object sender, EventArgs e)
