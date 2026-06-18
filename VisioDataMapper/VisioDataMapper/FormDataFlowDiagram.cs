@@ -249,7 +249,7 @@ namespace VisioDataMapper
 
             lblConnectorStyle = new Label { Text = "连接线:", Location = new Point(15, 65), AutoSize = true };
             cmbConnectorStyle = new ComboBox { Location = new Point(80, 61), Size = new Size(140, 25), DropDownStyle = ComboBoxStyle.DropDownList };
-            cmbConnectorStyle.Items.AddRange(new string[] { "绑定新增连接点", "普通动态连线" });
+            cmbConnectorStyle.Items.AddRange(new string[] { "绑定形状", "绑定新增连接点", "普通动态连线" });
             cmbConnectorStyle.SelectedIndex = 0;
 
             lblSpacing = new Label { Text = "横纵向间距:", Location = new Point(245, 65), AutoSize = true };
@@ -505,16 +505,15 @@ namespace VisioDataMapper
                 var node = nodeMap[nodeKey];
                 int index = idToIndexMap[nodeKey];
 
-                // 智能分类
+                // 智能分类：P开头 = 加工，D开头 = 数据存储，其他 = 实体
                 string guessType = "实体";
-                string labelLower = node.Label.ToLower();
-                string idLower = node.Id.ToLower();
+                string idUpper = node.Id.ToUpper();
 
-                if (node.Shape == "roundedbox" || node.Shape == "ellipse" || idLower.StartsWith("p") || labelLower.Contains("管理") || labelLower.Contains("业务") || labelLower.Contains("调度"))
+                if (idUpper.StartsWith("P"))
                 {
                     guessType = "加工";
                 }
-                else if (node.Shape == "record" || node.Shape == "folder" || idLower.StartsWith("d") || labelLower.Contains("表") || labelLower.Contains("存储") || labelLower.Contains("日志"))
+                else if (idUpper.StartsWith("D"))
                 {
                     guessType = "数据存储";
                 }
@@ -849,9 +848,35 @@ namespace VisioDataMapper
                     connector.CellsU["Char.Size"].FormulaU = "9pt";
                     connector.CellsU["Char.Color"].Formula = "RGB(0, 0, 0)";
 
-                    // 胶连起终点到图形的 PinX，这样拖动模块时线会跟着自动调整
-                    connector.CellsU["BeginX"].GlueTo(node.VisioShape.CellsU["PinX"]);
-                    connector.CellsU["EndX"].GlueTo(targetNode.VisioShape.CellsU["PinX"]);
+                    string connStyle = cmbConnectorStyle.SelectedItem?.ToString() ?? "绑定形状";
+
+                    if (connStyle == "绑定新增连接点")
+                    {
+                        // 动态为起终点形状新增中心连接点并胶连（Point-to-Point）
+                        short rowBegin = node.VisioShape.AddRow((short)Visio.VisSectionIndices.visSectionConnectionPts, (short)Visio.VisRowIndices.visRowLast, (short)Visio.VisRowTags.visTagCnnctPt);
+                        node.VisioShape.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, rowBegin, (short)Visio.VisCellIndices.visCnnctX].FormulaU = "Width*0.5";
+                        node.VisioShape.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, rowBegin, (short)Visio.VisCellIndices.visCnnctY].FormulaU = "Height*0.5";
+                        connector.CellsU["BeginX"].GlueTo(node.VisioShape.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, rowBegin, (short)Visio.VisCellIndices.visCnnctX]);
+
+                        short rowEnd = targetNode.VisioShape.AddRow((short)Visio.VisSectionIndices.visSectionConnectionPts, (short)Visio.VisRowIndices.visRowLast, (short)Visio.VisRowTags.visTagCnnctPt);
+                        targetNode.VisioShape.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, rowEnd, (short)Visio.VisCellIndices.visCnnctX].FormulaU = "Width*0.5";
+                        targetNode.VisioShape.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, rowEnd, (short)Visio.VisCellIndices.visCnnctY].FormulaU = "Height*0.5";
+                        connector.CellsU["EndX"].GlueTo(targetNode.VisioShape.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, rowEnd, (short)Visio.VisCellIndices.visCnnctX]);
+                    }
+                    else if (connStyle == "普通动态连线")
+                    {
+                        // 不进行硬胶连，仅将连线端点放置在形状中心坐标附近（静态放置，不随形状移动而调整）
+                        connector.CellsU["BeginX"].FormulaU = $"{node.VisioShape.CellsU["PinX"].ResultIU} in";
+                        connector.CellsU["BeginY"].FormulaU = $"{node.VisioShape.CellsU["PinY"].ResultIU} in";
+                        connector.CellsU["EndX"].FormulaU = $"{targetNode.VisioShape.CellsU["PinX"].ResultIU} in";
+                        connector.CellsU["EndY"].FormulaU = $"{targetNode.VisioShape.CellsU["PinY"].ResultIU} in";
+                    }
+                    else
+                    {
+                        // 默认“绑定形状”：胶连到图形的 PinX (Shape-to-Shape)，Visio 会自动寻找边缘最短路径
+                        connector.CellsU["BeginX"].GlueTo(node.VisioShape.CellsU["PinX"]);
+                        connector.CellsU["EndX"].GlueTo(targetNode.VisioShape.CellsU["PinX"]);
+                    }
                 }
             }
 
