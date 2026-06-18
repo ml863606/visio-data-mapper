@@ -43,6 +43,9 @@ namespace VisioDataMapper
         private CheckBox chkRightToLeftDashed;
         private ComboBox cmbActiveRectStyle;
         private Label lblActiveRectStyle;
+        private CheckBox chkDrawStageNotes;
+        private Label lblStageSpacing;
+        private TextBox txtStageSpacing;
         
         private Button btnGenerate;
         private Button btnClose;
@@ -249,6 +252,10 @@ namespace VisioDataMapper
             cmbActiveRectStyle.Items.AddRange(new string[] { "默认", "多出一格空距" });
             cmbActiveRectStyle.SelectedIndex = 1; // 多出一格空距
 
+            chkDrawStageNotes = new CheckBox { Text = "是否生成阶段图形", AutoSize = true, Checked = true, ForeColor = Color.FromArgb(74, 85, 104) };
+            lblStageSpacing = new Label { Text = "阶段额外间距(mm):", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104) };
+            txtStageSpacing = new TextBox { Text = "5", Size = new Size(40, 23), TextAlign = HorizontalAlignment.Center };
+
             btnGenerate = new Button
             {
                 Text = "生成绘图",
@@ -279,7 +286,7 @@ namespace VisioDataMapper
             FlowLayoutPanel optLayout = new FlowLayoutPanel
             {
                 Location = new Point(10, 10),
-                Size = new Size(620, 130),
+                Size = new Size(650, 130),
                 FlowDirection = FlowDirection.LeftToRight,
                 Padding = new Padding(0)
             };
@@ -301,19 +308,28 @@ namespace VisioDataMapper
             row2.Controls.Add(cmbActiveRectStyle);
 
             FlowLayoutPanel row3 = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 0, 0, 5) };
-            row3.Controls.Add(chkDrawBottomShape);
+            row3.Controls.Add(chkDrawStageNotes);
             Label spacer3 = new Label { Width = 20, AutoSize = false };
             row3.Controls.Add(spacer3);
-            row3.Controls.Add(chkActorStickman);
+            row3.Controls.Add(lblStageSpacing);
+            row3.Controls.Add(txtStageSpacing);
+
+            FlowLayoutPanel row4 = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 0, 0, 5) };
+            row4.Controls.Add(chkDrawBottomShape);
             Label spacer4 = new Label { Width = 20, AutoSize = false };
-            row3.Controls.Add(spacer4);
-            row3.Controls.Add(chkRightToLeftDashed);
+            row4.Controls.Add(spacer4);
+            row4.Controls.Add(chkActorStickman);
+            Label spacer5 = new Label { Width = 20, AutoSize = false };
+            row4.Controls.Add(spacer5);
+            row4.Controls.Add(chkRightToLeftDashed);
 
             optLayout.Controls.Add(row1);
             optLayout.SetFlowBreak(row1, true);
             optLayout.Controls.Add(row2);
             optLayout.SetFlowBreak(row2, true);
             optLayout.Controls.Add(row3);
+            optLayout.SetFlowBreak(row3, true);
+            optLayout.Controls.Add(row4);
 
             pnlOptions.Controls.Add(optLayout);
             pnlOptions.Controls.Add(btnGenerate);
@@ -862,12 +878,28 @@ namespace VisioDataMapper
             var altsByStartIdx = altBlocks.ToDictionary(a => a.AltStartIdx, a => a);
             var altsByEndIdx = altBlocks.GroupBy(a => a.EndIdx).ToDictionary(g => g.Key, g => g.ToList());
 
+            // Parse stage spacing parameter
+            double stageSpacingVal = 0;
+            if (stageNotes.Count > 0)
+            {
+                double spacingNum;
+                string spacingStr = (txtStageSpacing.Text ?? "5").Trim().Replace('，', '.');
+                if (double.TryParse(spacingStr, out spacingNum) && spacingNum >= 0)
+                {
+                    stageSpacingVal = spacingNum / 25.4; // convert mm to inches
+                }
+            }
+
             for (int i = 1; i <= messages.Count + 1; i++)
             {
                 // Note check
                 if (notesByIndex.ContainsKey(i))
                 {
-                    tempY -= 0.5 * notesByIndex[i].Count;
+                    tempY -= stageSpacingVal;
+                    if (chkDrawStageNotes.Checked)
+                    {
+                        tempY -= 0.5 * notesByIndex[i].Count;
+                    }
                 }
 
                 // Alt box start
@@ -1005,55 +1037,58 @@ namespace VisioDataMapper
             }
 
             // 8. Draw Stage Notes
-            foreach (var note in stageNotes)
+            if (chkDrawStageNotes.Checked)
             {
-                int nextIdx = note.NextMessageIndex;
-                double noteY;
-                if (nextIdx <= messages.Count)
+                foreach (var note in stageNotes)
                 {
-                    noteY = messageYCoordinates[nextIdx] + 0.3;
-                }
-                else
-                {
-                    noteY = bottomY + 0.2;
-                }
-
-                // Calculate note width and X center
-                double noteXStart = startX;
-                double noteXEnd = startX + totalActorsWidth;
-
-                if (note.Actors.Count > 0)
-                {
-                    var validActors = note.Actors.Where(lifelineXCoords.ContainsKey).ToList();
-                    if (validActors.Count > 0)
+                    int nextIdx = note.NextMessageIndex;
+                    double noteY;
+                    if (nextIdx <= messages.Count)
                     {
-                        double minX = validActors.Min(a => lifelineXCoords[a]);
-                        double maxX = validActors.Max(a => lifelineXCoords[a]);
-                        
-                        if (validActors.Count == 1)
+                        noteY = messageYCoordinates[nextIdx] + 0.3;
+                    }
+                    else
+                    {
+                        noteY = bottomY + 0.2;
+                    }
+
+                    // Calculate note width and X center
+                    double noteXStart = startX;
+                    double noteXEnd = startX + totalActorsWidth;
+
+                    if (note.Actors.Count > 0)
+                    {
+                        var validActors = note.Actors.Where(lifelineXCoords.ContainsKey).ToList();
+                        if (validActors.Count > 0)
                         {
-                            noteXStart = minX - 0.75;
-                            noteXEnd = minX + 0.75;
-                        }
-                        else
-                        {
-                            noteXStart = minX - 0.25;
-                            noteXEnd = maxX + 0.25;
+                            double minX = validActors.Min(a => lifelineXCoords[a]);
+                            double maxX = validActors.Max(a => lifelineXCoords[a]);
+                            
+                            if (validActors.Count == 1)
+                            {
+                                noteXStart = minX - 0.75;
+                                noteXEnd = minX + 0.75;
+                            }
+                            else
+                            {
+                                noteXStart = minX - 0.25;
+                                noteXEnd = maxX + 0.25;
+                            }
                         }
                     }
+
+                    double noteWidth = noteXEnd - noteXStart;
+                    double noteX = (noteXStart + noteXEnd) / 2.0;
+
+                    Visio.Shape noteBox = page.DrawRectangle(noteX - noteWidth / 2.0, noteY - 0.15, noteX + noteWidth / 2.0, noteY + 0.15);
+                    noteBox.Text = note.Text;
+                    ApplyTextShapeStyle(noteBox, currentFontName, currentFontSize, false);
+                    
+                    // Color Note: Light Yellow theme
+                    TrySetFormula(noteBox, "FillForegnd", "RGB(255, 253, 230)");
+                    TrySetFormula(noteBox, "LineColor", "RGB(180, 180, 100)");
+                    TrySetFormula(noteBox, "LineWeight", "0.75pt");
                 }
-
-                double noteWidth = noteXEnd - noteXStart;
-                double noteX = (noteXStart + noteXEnd) / 2.0;
-
-                Visio.Shape noteBox = page.DrawRectangle(noteX - noteWidth / 2.0, noteY - 0.15, noteX + noteWidth / 2.0, noteY + 0.15);
-                noteBox.Text = note.Text;
-                ApplyTextShapeStyle(noteBox, currentFontName, currentFontSize, false);
-                
-                // Color Note: Light Yellow theme
-                TrySetFormula(noteBox, "FillForegnd", "RGB(255, 253, 230)");
-                TrySetFormula(noteBox, "LineColor", "RGB(180, 180, 100)");
-                TrySetFormula(noteBox, "LineWeight", "0.75pt");
             }
 
             // 9. Draw Alt Blocks (Framing)
@@ -1138,17 +1173,35 @@ namespace VisioDataMapper
                 }
                 else
                 {
-                    // Draw horizontal line
-                    Visio.Shape line = page.DrawLine(x1, y, x2, y);
+                    // Draw horizontal line always from left to right to ensure text orientation is correct
+                    double startXVal = Math.Min(x1, x2);
+                    double endXVal = Math.Max(x1, x2);
+                    Visio.Shape line = page.DrawLine(startXVal, y, endXVal, y);
                     line.Text = msg.Text;
                     
                     bool isReturn = msg.Type == "返回";
-                    bool isAsync = msg.Type == "异步";
                     bool isRightToLeft = x1 > x2;
 
                     bool dashed = isReturn || (isRightToLeft && chkRightToLeftDashed.Checked);
                     
-                    ApplyLineStyle(line, dashed, "4");
+                    // Determine arrow direction
+                    string beginArrow = "0";
+                    string endArrow = "0";
+                    if (isRightToLeft)
+                    {
+                        beginArrow = "4"; // Pointing left (towards the start of the line)
+                    }
+                    else
+                    {
+                        endArrow = "4"; // Pointing right (towards the end of the line)
+                    }
+                    
+                    TrySetFormula(line, "LineColor", "RGB(0, 0, 0)");
+                    TrySetFormula(line, "LineWeight", $"{currentLineWidth.ToString(CultureInfo.InvariantCulture)}pt");
+                    TrySetFormula(line, "LinePattern", dashed ? "2" : "1");
+                    TrySetFormula(line, "BeginArrow", beginArrow);
+                    TrySetFormula(line, "EndArrow", endArrow);
+                    
                     ApplyTextShapeStyle(line, currentFontName, currentFontSize, false);
                     
                     // Make text background white/opaque
