@@ -32,6 +32,7 @@ namespace VisioDataMapper
         private Panel pnlAltNoteBorder;
         
         private Panel pnlOptions;
+        private TableLayoutPanel optLayout;
         private Label lblHorSpacing;
         private TextBox txtHorizontalSpacing;
         private Label lblObjSize;
@@ -52,6 +53,8 @@ namespace VisioDataMapper
         private TextBox txtAltSpacing;
         private Label lblSelfSpacing;
         private TextBox txtSelfSpacing;
+        private Label lblTitleSpacing;
+        private TextBox txtTitleSpacing;
         
         private Button btnGenerate;
         private Button btnClose;
@@ -230,7 +233,7 @@ namespace VisioDataMapper
             {
                 BackColor = Color.White,
                 BorderStyle = BorderStyle.None,
-                Height = 175
+                Height = 195
             };
             pnlOptions.Paint += (s, pe) =>
             {
@@ -258,7 +261,7 @@ namespace VisioDataMapper
             cmbActiveRectStyle.Items.AddRange(new string[] { "默认", "多出一格空距" });
             cmbActiveRectStyle.SelectedIndex = 1; // 多出一格空距
 
-            chkDrawStageNotes = new CheckBox { Text = "是否生成阶段图形", AutoSize = true, Checked = true, ForeColor = Color.FromArgb(74, 85, 104) };
+            chkDrawStageNotes = new CheckBox { Text = "是否生成阶段图形", AutoSize = true, Checked = false, ForeColor = Color.FromArgb(74, 85, 104) };
             lblStageSpacing = new Label { Text = "阶段额外间距(mm):", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104) };
             txtStageSpacing = new TextBox { Text = "5", Size = new Size(40, 23), TextAlign = HorizontalAlignment.Center };
 
@@ -270,6 +273,9 @@ namespace VisioDataMapper
 
             lblSelfSpacing = new Label { Text = "自关联高度(mm):", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104) };
             txtSelfSpacing = new TextBox { Text = "6", Size = new Size(40, 23), TextAlign = HorizontalAlignment.Center };
+
+            lblTitleSpacing = new Label { Text = "标题间距(mm):", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104) };
+            txtTitleSpacing = new TextBox { Text = "15", Size = new Size(40, 23), TextAlign = HorizontalAlignment.Center };
 
             btnGenerate = new Button
             {
@@ -298,67 +304,37 @@ namespace VisioDataMapper
             btnClose.Click += btnClose_Click;
 
             // Place option controls in panel
-            FlowLayoutPanel optLayout = new FlowLayoutPanel
+            optLayout = new TableLayoutPanel
             {
                 Location = new Point(10, 10),
-                Size = new Size(720, 155),
-                FlowDirection = FlowDirection.LeftToRight,
-                Padding = new Padding(0)
+                Size = new Size(880, 135),
+                ColumnCount = 4,
+                RowCount = 4,
+                BackColor = Color.White
             };
 
-            FlowLayoutPanel row1 = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 0, 0, 5) };
-            row1.Controls.Add(lblHorSpacing);
-            row1.Controls.Add(txtHorizontalSpacing);
-            Label spacer1 = new Label { Width = 15, AutoSize = false };
-            row1.Controls.Add(spacer1);
-            row1.Controls.Add(lblVerticalSpacing);
-            row1.Controls.Add(txtVerticalSpacing);
-            Label spacer1b = new Label { Width = 15, AutoSize = false };
-            row1.Controls.Add(spacer1b);
-            row1.Controls.Add(lblStageSpacing);
-            row1.Controls.Add(txtStageSpacing);
+            for (int i = 0; i < 4; i++)
+            {
+                optLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+                optLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
+            }
 
-            FlowLayoutPanel row2 = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 0, 0, 5) };
-            row2.Controls.Add(lblObjSize);
-            row2.Controls.Add(txtObjectWidth);
-            row2.Controls.Add(txtObjectHeight);
-            Label spacer2 = new Label { Width = 15, AutoSize = false };
-            row2.Controls.Add(spacer2);
-            row2.Controls.Add(lblAltSpacing);
-            row2.Controls.Add(txtAltSpacing);
-            Label spacer2b = new Label { Width = 15, AutoSize = false };
-            row2.Controls.Add(spacer2b);
-            row2.Controls.Add(lblSelfSpacing);
-            row2.Controls.Add(txtSelfSpacing);
+            optLayout.Controls.Add(CreateCellPanel(lblHorSpacing, txtHorizontalSpacing), 0, 0);
+            optLayout.Controls.Add(CreateCellPanel(lblVerticalSpacing, txtVerticalSpacing), 1, 0);
+            optLayout.Controls.Add(CreateCellPanel(lblStageSpacing, txtStageSpacing), 2, 0);
+            optLayout.Controls.Add(CreateCellPanel(lblTitleSpacing, txtTitleSpacing), 3, 0);
 
-            FlowLayoutPanel row3 = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 0, 0, 5) };
-            row3.Controls.Add(chkDrawActiveRect);
-            Label spacer3 = new Label { Width = 15, AutoSize = false };
-            row3.Controls.Add(spacer3);
-            row3.Controls.Add(lblActiveRectStyle);
-            row3.Controls.Add(cmbActiveRectStyle);
+            optLayout.Controls.Add(CreateCellPanel(lblObjSize, txtObjectWidth, txtObjectHeight), 0, 1);
+            optLayout.Controls.Add(CreateCellPanel(lblAltSpacing, txtAltSpacing), 1, 1);
+            optLayout.Controls.Add(CreateCellPanel(lblSelfSpacing, txtSelfSpacing), 2, 1);
+            optLayout.Controls.Add(CreateCellPanel(lblActiveRectStyle, cmbActiveRectStyle), 3, 1);
 
-            FlowLayoutPanel row4 = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 0, 0, 5) };
-            row4.Controls.Add(chkDrawStageNotes);
-            Label spacer4 = new Label { Width = 15, AutoSize = false };
-            row4.Controls.Add(spacer4);
-            row4.Controls.Add(chkDrawBottomShape);
+            optLayout.Controls.Add(CreateCellPanel(chkDrawActiveRect), 0, 2);
+            optLayout.Controls.Add(CreateCellPanel(chkDrawStageNotes), 1, 2);
+            optLayout.Controls.Add(CreateCellPanel(chkDrawBottomShape), 2, 2);
+            optLayout.Controls.Add(CreateCellPanel(chkActorStickman), 3, 2);
 
-            FlowLayoutPanel row5 = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 0, 0, 5) };
-            row5.Controls.Add(chkActorStickman);
-            Label spacer5 = new Label { Width = 15, AutoSize = false };
-            row5.Controls.Add(spacer5);
-            row5.Controls.Add(chkRightToLeftDashed);
-
-            optLayout.Controls.Add(row1);
-            optLayout.SetFlowBreak(row1, true);
-            optLayout.Controls.Add(row2);
-            optLayout.SetFlowBreak(row2, true);
-            optLayout.Controls.Add(row3);
-            optLayout.SetFlowBreak(row3, true);
-            optLayout.Controls.Add(row4);
-            optLayout.SetFlowBreak(row4, true);
-            optLayout.Controls.Add(row5);
+            optLayout.Controls.Add(CreateCellPanel(chkRightToLeftDashed), 0, 3);
 
             pnlOptions.Controls.Add(optLayout);
             pnlOptions.Controls.Add(btnGenerate);
@@ -379,6 +355,36 @@ namespace VisioDataMapper
             LayoutControls();
             
             AppendLog("已启动智能画图-UML时序图。请点击“导入表格”读取剪贴板中的Mermaid时序图代码。");
+        }
+
+        private FlowLayoutPanel CreateCellPanel(params Control[] controls)
+        {
+            var pnl = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Margin = new Padding(0, 0, 0, 5),
+                Padding = new Padding(0, 2, 0, 0),
+                Dock = DockStyle.Fill,
+                BackColor = Color.Transparent
+            };
+            foreach (var ctrl in controls)
+            {
+                if (ctrl is Label lbl)
+                {
+                    lbl.Margin = new Padding(0, 5, 0, 0);
+                }
+                else if (ctrl is TextBox || ctrl is ComboBox)
+                {
+                    ctrl.Margin = new Padding(3, 0, 0, 0);
+                }
+                else if (ctrl is CheckBox chk)
+                {
+                    chk.Margin = new Padding(0, 2, 0, 0);
+                }
+                pnl.Controls.Add(ctrl);
+            }
+            return pnl;
         }
 
         private void TabControlMain_DrawItem(object sender, DrawItemEventArgs e)
@@ -464,6 +470,11 @@ namespace VisioDataMapper
             // Options panel placement
             pnlOptions.Location = new Point(margin, pnlAltNoteBorder.Bottom + 10);
             pnlOptions.Width = width;
+            if (optLayout != null)
+            {
+                optLayout.Width = pnlOptions.Width - 20;
+                optLayout.Height = 135;
+            }
 
             // Close and Generate buttons in panel (dynamically positioned at the bottom right)
             btnClose.Location = new Point(pnlOptions.Width - btnClose.Width - 15, pnlOptions.Height - btnClose.Height - 12);
@@ -897,8 +908,9 @@ namespace VisioDataMapper
             double verticalOffsetPerMsg = ParsePositiveNumber(txtVerticalSpacing.Text, "消息纵向间距") / 25.4;
             double altSpacingVal = ParsePositiveNumber(txtAltSpacing.Text, "Alt上下边距") / 25.4;
             double selfSpacingVal = ParsePositiveNumber(txtSelfSpacing.Text, "自关联高度") / 25.4;
+            double titleSpacingVal = ParsePositiveNumber(txtTitleSpacing.Text, "标题主体间距") / 25.4;
 
-            double currentY = pageHeight - 1.2; // Start Y for top shapes
+            double currentY = pageHeight - 0.6 - titleSpacingVal; // Start Y for top shapes based on title spacing
             double topY = currentY;
 
             // Calculate message offsets in advance
@@ -977,7 +989,7 @@ namespace VisioDataMapper
 
             // Draw 大标题
             string titleText = string.IsNullOrWhiteSpace(txtTitle.Text) ? "时序图" : txtTitle.Text.Trim();
-            Visio.Shape titleShape = page.DrawRectangle(pageWidth / 2.0 - 1.5, topY + 0.6, pageWidth / 2.0 + 1.5, topY + 1.0);
+            Visio.Shape titleShape = page.DrawRectangle(pageWidth / 2.0 - 1.5, topY + titleSpacingVal, pageWidth / 2.0 + 1.5, topY + titleSpacingVal + 0.4);
             titleShape.Text = titleText;
             ApplyTextShapeStyle(titleShape, currentFontName, currentFontSize + 2, true);
             ApplyBoxStyle(titleShape);
