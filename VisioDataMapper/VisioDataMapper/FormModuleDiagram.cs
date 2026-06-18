@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
@@ -30,6 +30,9 @@ namespace VisioDataMapper
         private TextBox txtVerSpacing;
 
         private Label lblLevelCount;
+        private Label lblSelectLevel;
+        private ComboBox cmbSelectLevel;
+        private bool isUpdatingLevels = false;
         private DataGridView dgvLevels;
         private Label lblFontName;
         private ComboBox cmbFontName;
@@ -130,7 +133,10 @@ namespace VisioDataMapper
             lblFontSize = new Label { Text = "字号:", Location = new Point(955, 570), Size = new Size(40, 22) };
             txtFontSize = new TextBox { Text = "10.5", Location = new Point(1000, 566), Size = new Size(55, 25) };
 
-            lblLevelCount = new Label { Text = "共 0 个层级", Location = new Point(15, 605), Size = new Size(180, 22) };
+            lblLevelCount = new Label { Text = "共 0 个层级", Location = new Point(15, 605), Size = new Size(100, 22) };
+            lblSelectLevel = new Label { Text = "生成层级选择:", Location = new Point(125, 605), Size = new Size(100, 22) };
+            cmbSelectLevel = new ComboBox { Location = new Point(230, 601), Size = new Size(80, 25), DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbSelectLevel.SelectedIndexChanged += cmbSelectLevel_SelectedIndexChanged;
 
             dgvLevels = new DataGridView
             {
@@ -183,6 +189,8 @@ namespace VisioDataMapper
             this.Controls.Add(lblFontSize);
             this.Controls.Add(txtFontSize);
             this.Controls.Add(lblLevelCount);
+            this.Controls.Add(lblSelectLevel);
+            this.Controls.Add(cmbSelectLevel);
             this.Controls.Add(dgvLevels);
             this.Controls.Add(lblLineWidth);
             this.Controls.Add(txtLineWidth);
@@ -326,6 +334,11 @@ namespace VisioDataMapper
             lblFontName.Left = cmbFontName.Left - lblFontName.Width - 5;
 
             lblLevelCount.Top = rowTop + 35;
+            lblLevelCount.Width = 100;
+            lblSelectLevel.Top = rowTop + 35;
+            lblSelectLevel.Left = lblLevelCount.Right + 10;
+            cmbSelectLevel.Top = rowTop + 31;
+            cmbSelectLevel.Left = lblSelectLevel.Right + 5;
             dgvLevels.Top = lblLevelCount.Bottom + 5;
             dgvLevels.Width = width;
             dgvLevels.Height = Math.Max(125, bottomButtonTop - dgvLevels.Top - 10);
@@ -343,6 +356,12 @@ namespace VisioDataMapper
         {
             Clipboard.SetText(txtPrompt.Text);
             AppendLog("已复制功能模块图 JSON 提示词。");
+        }
+
+        private void cmbSelectLevel_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (isUpdatingLevels) return;
+            RefreshLevelOptions();
         }
 
         private void txtStructure_TextChanged(object sender, EventArgs e)
@@ -382,23 +401,67 @@ namespace VisioDataMapper
             var stats = new SortedDictionary<int, LevelStats>();
             CollectLevelStats(root, 1, stats);
 
+
+
+            int totalLevels = stats.Count;
+            lblLevelCount.Text = $"共 {totalLevels} 个层级";
+
+            isUpdatingLevels = true;
+            try
+            {
+                if (cmbSelectLevel.Items.Count != totalLevels)
+                {
+                    cmbSelectLevel.Items.Clear();
+                    for (int i = 1; i <= totalLevels; i++)
+                    {
+                        cmbSelectLevel.Items.Add(i);
+                    }
+                    if (totalLevels > 0)
+                    {
+                        cmbSelectLevel.SelectedIndex = totalLevels - 1;
+                    }
+                }
+            }
+            finally
+            {
+                isUpdatingLevels = false;
+            }
+
+            int selectedMaxLevel = totalLevels;
+            if (cmbSelectLevel.SelectedItem != null)
+            {
+                selectedMaxLevel = Convert.ToInt32(cmbSelectLevel.SelectedItem);
+            }
+
             dgvLevels.Rows.Clear();
             levelOptions.Clear();
-            lblLevelCount.Text = $"共 {stats.Count} 个层级";
 
-            foreach (var item in stats)
+            for (int level = 1; level <= selectedMaxLevel; level++)
             {
-                int level = item.Key;
-                LevelStats stat = item.Value;
-                bool isLastLevel = level == stats.Count;
+                if (!stats.ContainsKey(level)) continue;
+                LevelStats stat = stats[level];
+                bool isLastLevel = level == selectedMaxLevel;
                 LevelOption existingOption;
                 bool hasExistingOption = existingOptions.TryGetValue(level, out existingOption);
-                bool isVertical = hasExistingOption ? existingOption.IsVertical : isLastLevel;
-                double widthMm = hasExistingOption ? existingOption.WidthMm : (isVertical ? 14 : EstimateHorizontalWidthMm(stat.LongestText));
-                double heightMm = hasExistingOption ? existingOption.HeightMm : (isVertical ? GetVerticalTextHeightMm(stat.LongestText) : 10);
-                if (isVertical)
+                // 末层强制竖排，宽高重新自适应；其他层从已有选项读取，用户可手动调整
+                bool isVertical;
+                double widthMm;
+                double heightMm;
+                if (isLastLevel)
                 {
-                    heightMm = Math.Max(heightMm, GetVerticalTextHeightMm(stat.LongestText));
+                    isVertical = true;
+                    widthMm = 14;
+                    heightMm = GetVerticalTextHeightMm(stat.LongestText);
+                }
+                else
+                {
+                    isVertical = hasExistingOption ? existingOption.IsVertical : false;
+                    widthMm = hasExistingOption ? existingOption.WidthMm : EstimateHorizontalWidthMm(stat.LongestText);
+                    heightMm = hasExistingOption ? existingOption.HeightMm : 10;
+                    if (isVertical)
+                    {
+                        heightMm = Math.Max(heightMm, GetVerticalTextHeightMm(stat.LongestText));
+                    }
                 }
                 double rootTopExtraGapInch = hasExistingOption ? existingOption.RootTopExtraGapInch : DefaultRootTopExtraGapInch;
                 if (level != 1)
@@ -675,9 +738,16 @@ namespace VisioDataMapper
                 // Layout settings
                 double defaultShapeWidth = 35.0 / 25.4; // 35mm default width
 
+                // Determine the max rendering level from the combo selection
+                int selectedMaxLevel = levelOptions.Count > 0 ? levelOptions[levelOptions.Count - 1].Level : int.MaxValue;
+                if (cmbSelectLevel.SelectedItem != null)
+                {
+                    selectedMaxLevel = Convert.ToInt32(cmbSelectLevel.SelectedItem);
+                }
+
                 AppendLog("运行层级布局引擎算法...");
                 // Step 1: Calculate subtree sizes
-                CalculateSubtreeSizes(root, defaultShapeWidth, shapeHeightVal, horSpacingVal, verSpacingVal, optionsByLevel, isLeftToRight, 1);
+                CalculateSubtreeSizes(root, defaultShapeWidth, shapeHeightVal, horSpacingVal, verSpacingVal, optionsByLevel, isLeftToRight, 1, selectedMaxLevel);
 
                 // Page dimensions
                 double pageWidth = activePage.PageSheet.CellsU["PageWidth"].Result["in"];
@@ -696,11 +766,11 @@ namespace VisioDataMapper
                 }
 
                 // Step 2: Compute absolute coordinates
-                AssignCoordinates(root, defaultShapeWidth, shapeHeightVal, horSpacingVal, verSpacingVal, optionsByLevel, isLeftToRight, 1);
+                AssignCoordinates(root, defaultShapeWidth, shapeHeightVal, horSpacingVal, verSpacingVal, optionsByLevel, isLeftToRight, 1, selectedMaxLevel);
 
                 AppendLog("在 Visio 中绘制形状和连线...");
                 // Draw nodes and connect them
-                DrawTree(activePage, root, defaultShapeWidth, shapeHeightVal, optionsByLevel, isLeftToRight, 1);
+                DrawTree(activePage, root, defaultShapeWidth, shapeHeightVal, optionsByLevel, isLeftToRight, 1, selectedMaxLevel);
 
                 // The module diagram title is only used as form metadata; it is not rendered.
 
@@ -936,14 +1006,14 @@ namespace VisioDataMapper
             }
         }
 
-        private void CalculateSubtreeSizes(TreeNode node, double defaultWidth, double defaultHeight, double horSpacing, double verSpacing, Dictionary<int, LevelOption> optionsByLevel, bool isLeftToRight, int level)
+        private void CalculateSubtreeSizes(TreeNode node, double defaultWidth, double defaultHeight, double horSpacing, double verSpacing, Dictionary<int, LevelOption> optionsByLevel, bool isLeftToRight, int level, int selectedMaxLevel = int.MaxValue)
         {
             double width;
             double height;
             GetShapeSize(level, defaultWidth, defaultHeight, optionsByLevel, out width, out height);
             double selfSize = isLeftToRight ? height : width;
 
-            if (node.Children.Count == 0)
+            if (node.Children.Count == 0 || level >= selectedMaxLevel)
             {
                 node.SubtreeSize = selfSize;
                 return;
@@ -952,7 +1022,7 @@ namespace VisioDataMapper
             double childrenSize = 0;
             foreach (var child in node.Children)
             {
-                CalculateSubtreeSizes(child, defaultWidth, defaultHeight, horSpacing, verSpacing, optionsByLevel, isLeftToRight, level + 1);
+                CalculateSubtreeSizes(child, defaultWidth, defaultHeight, horSpacing, verSpacing, optionsByLevel, isLeftToRight, level + 1, selectedMaxLevel);
                 childrenSize += child.SubtreeSize;
             }
 
@@ -1015,9 +1085,9 @@ namespace VisioDataMapper
             return depth;
         }
 
-        private void AssignCoordinates(TreeNode node, double defaultWidth, double defaultHeight, double horSpacing, double verSpacing, Dictionary<int, LevelOption> optionsByLevel, bool isLeftToRight, int level)
+        private void AssignCoordinates(TreeNode node, double defaultWidth, double defaultHeight, double horSpacing, double verSpacing, Dictionary<int, LevelOption> optionsByLevel, bool isLeftToRight, int level, int selectedMaxLevel = int.MaxValue)
         {
-            if (node.Children.Count == 0) return;
+            if (node.Children.Count == 0 || level >= selectedMaxLevel) return;
 
             double spacing = GetSiblingSpacing(node, horSpacing, verSpacing, isLeftToRight);
             double totalSize = 0;
@@ -1044,7 +1114,7 @@ namespace VisioDataMapper
                     child.Y = currentY - child.SubtreeSize / 2.0;
                     currentY -= child.SubtreeSize + spacing;
 
-                    AssignCoordinates(child, defaultWidth, defaultHeight, horSpacing, verSpacing, optionsByLevel, isLeftToRight, level + 1);
+                    AssignCoordinates(child, defaultWidth, defaultHeight, horSpacing, verSpacing, optionsByLevel, isLeftToRight, level + 1, selectedMaxLevel);
                 }
             }
             else
@@ -1064,12 +1134,12 @@ namespace VisioDataMapper
                     child.Y = node.Y - nodeHeight / 2.0 - verSpacing - childHeight / 2.0;
                     currentX += child.SubtreeSize + spacing;
 
-                    AssignCoordinates(child, defaultWidth, defaultHeight, horSpacing, verSpacing, optionsByLevel, isLeftToRight, level + 1);
+                    AssignCoordinates(child, defaultWidth, defaultHeight, horSpacing, verSpacing, optionsByLevel, isLeftToRight, level + 1, selectedMaxLevel);
                 }
             }
         }
 
-        private void DrawTree(Visio.Page page, TreeNode node, double defaultWidth, double defaultHeight, Dictionary<int, LevelOption> optionsByLevel, bool isLeftToRight, int level)
+        private void DrawTree(Visio.Page page, TreeNode node, double defaultWidth, double defaultHeight, Dictionary<int, LevelOption> optionsByLevel, bool isLeftToRight, int level, int selectedMaxLevel = int.MaxValue)
         {
             double width;
             double height;
@@ -1097,9 +1167,12 @@ namespace VisioDataMapper
             }
 
             // Draw children
-            foreach (var child in node.Children)
+            if (level < selectedMaxLevel)
             {
-                DrawTree(page, child, defaultWidth, defaultHeight, optionsByLevel, isLeftToRight, level + 1);
+                foreach (var child in node.Children)
+                {
+                    DrawTree(page, child, defaultWidth, defaultHeight, optionsByLevel, isLeftToRight, level + 1, selectedMaxLevel);
+                }
             }
         }
 

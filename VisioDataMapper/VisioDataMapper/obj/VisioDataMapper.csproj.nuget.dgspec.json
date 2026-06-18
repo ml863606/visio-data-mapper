@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\WorkSpace\\mxl\\mxl-ai-tool\\visio-data-mapper\\VisioDataMapper\\VisioDataMapper\\VisioDataMapper.csproj": {}
+    "D:\\WorkSpace\\mxl\\xyz\\xyz-tool\\visio-tool\\VisioDataMapper\\VisioDataMapper\\VisioDataMapper.csproj": {}
   },
   "projects": {
-    "D:\\WorkSpace\\mxl\\mxl-ai-tool\\visio-data-mapper\\VisioDataMapper\\VisioDataMapper\\VisioDataMapper.csproj": {
+    "D:\\WorkSpace\\mxl\\xyz\\xyz-tool\\visio-tool\\VisioDataMapper\\VisioDataMapper\\VisioDataMapper.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\WorkSpace\\mxl\\mxl-ai-tool\\visio-data-mapper\\VisioDataMapper\\VisioDataMapper\\VisioDataMapper.csproj",
+        "projectUniqueName": "D:\\WorkSpace\\mxl\\xyz\\xyz-tool\\visio-tool\\VisioDataMapper\\VisioDataMapper\\VisioDataMapper.csproj",
         "projectName": "VisioDataMapper",
-        "projectPath": "D:\\WorkSpace\\mxl\\mxl-ai-tool\\visio-data-mapper\\VisioDataMapper\\VisioDataMapper\\VisioDataMapper.csproj",
-        "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-        "outputPath": "D:\\WorkSpace\\mxl\\mxl-ai-tool\\visio-data-mapper\\VisioDataMapper\\VisioDataMapper\\obj\\",
+        "projectPath": "D:\\WorkSpace\\mxl\\xyz\\xyz-tool\\visio-tool\\VisioDataMapper\\VisioDataMapper\\VisioDataMapper.csproj",
+        "packagesPath": "C:\\Users\\mxl\\.nuget\\packages\\",
+        "outputPath": "D:\\WorkSpace\\mxl\\xyz\\xyz-tool\\visio-tool\\VisioDataMapper\\VisioDataMapper\\obj\\",
         "projectStyle": "PackageReference",
         "skipContentFileWrite": true,
         "UsingMicrosoftNETSdk": false,
@@ -19,7 +19,7 @@
           "D:\\DevSoftWare\\DevTool\\Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Administrator\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\mxl\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
