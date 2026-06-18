@@ -46,6 +46,12 @@ namespace VisioDataMapper
         private CheckBox chkDrawStageNotes;
         private Label lblStageSpacing;
         private TextBox txtStageSpacing;
+        private Label lblVerticalSpacing;
+        private TextBox txtVerticalSpacing;
+        private Label lblAltSpacing;
+        private TextBox txtAltSpacing;
+        private Label lblSelfSpacing;
+        private TextBox txtSelfSpacing;
         
         private Button btnGenerate;
         private Button btnClose;
@@ -64,8 +70,8 @@ namespace VisioDataMapper
         private void InitializeComponent()
         {
             this.Text = "智能画图-UML时序图";
-            this.Size = new Size(950, 850);
-            this.MinimumSize = new Size(950, 780);
+            this.Size = new Size(950, 890);
+            this.MinimumSize = new Size(950, 820);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.Sizable;
             this.MaximizeBox = true;
@@ -224,7 +230,7 @@ namespace VisioDataMapper
             {
                 BackColor = Color.White,
                 BorderStyle = BorderStyle.None,
-                Height = 150
+                Height = 175
             };
             pnlOptions.Paint += (s, pe) =>
             {
@@ -256,6 +262,15 @@ namespace VisioDataMapper
             lblStageSpacing = new Label { Text = "阶段额外间距(mm):", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104) };
             txtStageSpacing = new TextBox { Text = "5", Size = new Size(40, 23), TextAlign = HorizontalAlignment.Center };
 
+            lblVerticalSpacing = new Label { Text = "消息纵向间距(mm):", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104) };
+            txtVerticalSpacing = new TextBox { Text = "12", Size = new Size(40, 23), TextAlign = HorizontalAlignment.Center };
+            
+            lblAltSpacing = new Label { Text = "Alt上下边距(mm):", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104) };
+            txtAltSpacing = new TextBox { Text = "6", Size = new Size(40, 23), TextAlign = HorizontalAlignment.Center };
+
+            lblSelfSpacing = new Label { Text = "自关联高度(mm):", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104) };
+            txtSelfSpacing = new TextBox { Text = "6", Size = new Size(40, 23), TextAlign = HorizontalAlignment.Center };
+
             btnGenerate = new Button
             {
                 Text = "生成绘图",
@@ -286,7 +301,7 @@ namespace VisioDataMapper
             FlowLayoutPanel optLayout = new FlowLayoutPanel
             {
                 Location = new Point(10, 10),
-                Size = new Size(650, 130),
+                Size = new Size(720, 155),
                 FlowDirection = FlowDirection.LeftToRight,
                 Padding = new Padding(0)
             };
@@ -294,34 +309,46 @@ namespace VisioDataMapper
             FlowLayoutPanel row1 = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 0, 0, 5) };
             row1.Controls.Add(lblHorSpacing);
             row1.Controls.Add(txtHorizontalSpacing);
-            Label spacer1 = new Label { Width = 20, AutoSize = false };
+            Label spacer1 = new Label { Width = 15, AutoSize = false };
             row1.Controls.Add(spacer1);
-            row1.Controls.Add(lblObjSize);
-            row1.Controls.Add(txtObjectWidth);
-            row1.Controls.Add(txtObjectHeight);
+            row1.Controls.Add(lblVerticalSpacing);
+            row1.Controls.Add(txtVerticalSpacing);
+            Label spacer1b = new Label { Width = 15, AutoSize = false };
+            row1.Controls.Add(spacer1b);
+            row1.Controls.Add(lblStageSpacing);
+            row1.Controls.Add(txtStageSpacing);
 
             FlowLayoutPanel row2 = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 0, 0, 5) };
-            row2.Controls.Add(chkDrawActiveRect);
-            Label spacer2 = new Label { Width = 20, AutoSize = false };
+            row2.Controls.Add(lblObjSize);
+            row2.Controls.Add(txtObjectWidth);
+            row2.Controls.Add(txtObjectHeight);
+            Label spacer2 = new Label { Width = 15, AutoSize = false };
             row2.Controls.Add(spacer2);
-            row2.Controls.Add(lblActiveRectStyle);
-            row2.Controls.Add(cmbActiveRectStyle);
+            row2.Controls.Add(lblAltSpacing);
+            row2.Controls.Add(txtAltSpacing);
+            Label spacer2b = new Label { Width = 15, AutoSize = false };
+            row2.Controls.Add(spacer2b);
+            row2.Controls.Add(lblSelfSpacing);
+            row2.Controls.Add(txtSelfSpacing);
 
             FlowLayoutPanel row3 = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 0, 0, 5) };
-            row3.Controls.Add(chkDrawStageNotes);
-            Label spacer3 = new Label { Width = 20, AutoSize = false };
+            row3.Controls.Add(chkDrawActiveRect);
+            Label spacer3 = new Label { Width = 15, AutoSize = false };
             row3.Controls.Add(spacer3);
-            row3.Controls.Add(lblStageSpacing);
-            row3.Controls.Add(txtStageSpacing);
+            row3.Controls.Add(lblActiveRectStyle);
+            row3.Controls.Add(cmbActiveRectStyle);
 
             FlowLayoutPanel row4 = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 0, 0, 5) };
-            row4.Controls.Add(chkDrawBottomShape);
-            Label spacer4 = new Label { Width = 20, AutoSize = false };
+            row4.Controls.Add(chkDrawStageNotes);
+            Label spacer4 = new Label { Width = 15, AutoSize = false };
             row4.Controls.Add(spacer4);
-            row4.Controls.Add(chkActorStickman);
-            Label spacer5 = new Label { Width = 20, AutoSize = false };
-            row4.Controls.Add(spacer5);
-            row4.Controls.Add(chkRightToLeftDashed);
+            row4.Controls.Add(chkDrawBottomShape);
+
+            FlowLayoutPanel row5 = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 0, 0, 5) };
+            row5.Controls.Add(chkActorStickman);
+            Label spacer5 = new Label { Width = 15, AutoSize = false };
+            row5.Controls.Add(spacer5);
+            row5.Controls.Add(chkRightToLeftDashed);
 
             optLayout.Controls.Add(row1);
             optLayout.SetFlowBreak(row1, true);
@@ -330,6 +357,8 @@ namespace VisioDataMapper
             optLayout.Controls.Add(row3);
             optLayout.SetFlowBreak(row3, true);
             optLayout.Controls.Add(row4);
+            optLayout.SetFlowBreak(row4, true);
+            optLayout.Controls.Add(row5);
 
             pnlOptions.Controls.Add(optLayout);
             pnlOptions.Controls.Add(btnGenerate);
@@ -414,7 +443,7 @@ namespace VisioDataMapper
             // TabControl placement
             tabControlMain.Location = new Point(margin, 65);
             tabControlMain.Width = width - rightActorsWidth - margin;
-            tabControlMain.Height = Math.Max(200, this.ClientSize.Height - 65 - 150 - 80 - 15 - margin);
+            tabControlMain.Height = Math.Max(200, this.ClientSize.Height - 65 - pnlOptions.Height - pnlAltNoteBorder.Height - 35);
 
             // CheckedListBox on the right side of tabControl
             chkActors.Location = new Point(tabControlMain.Right + margin, 85);
@@ -436,9 +465,9 @@ namespace VisioDataMapper
             pnlOptions.Location = new Point(margin, pnlAltNoteBorder.Bottom + 10);
             pnlOptions.Width = width;
 
-            // Close and Generate buttons in panel
-            btnClose.Location = new Point(pnlOptions.Width - btnClose.Width - 15, 100);
-            btnGenerate.Location = new Point(btnClose.Left - btnGenerate.Width - 15, 100);
+            // Close and Generate buttons in panel (dynamically positioned at the bottom right)
+            btnClose.Location = new Point(pnlOptions.Width - btnClose.Width - 15, pnlOptions.Height - btnClose.Height - 12);
+            btnGenerate.Location = new Point(btnClose.Left - btnGenerate.Width - 15, pnlOptions.Height - btnGenerate.Height - 12);
         }
 
         private void FormSequenceDiagram_Resize(object sender, EventArgs e)
@@ -865,7 +894,10 @@ namespace VisioDataMapper
             }
 
             // We estimate page height based on number of messages, alts, and notes.
-            double verticalOffsetPerMsg = 0.5; // space for message
+            double verticalOffsetPerMsg = ParsePositiveNumber(txtVerticalSpacing.Text, "消息纵向间距") / 25.4;
+            double altSpacingVal = ParsePositiveNumber(txtAltSpacing.Text, "Alt上下边距") / 25.4;
+            double selfSpacingVal = ParsePositiveNumber(txtSelfSpacing.Text, "自关联高度") / 25.4;
+
             double currentY = pageHeight - 1.2; // Start Y for top shapes
             double topY = currentY;
 
@@ -905,7 +937,7 @@ namespace VisioDataMapper
                 // Alt box start
                 if (altsByStartIdx.ContainsKey(i))
                 {
-                    tempY -= 0.25;
+                    tempY -= altSpacingVal;
                 }
 
                 if (i <= messages.Count)
@@ -913,7 +945,7 @@ namespace VisioDataMapper
                     var msg = messages[i - 1];
                     if (msg.Type == "自关联")
                     {
-                        tempY -= 0.25;
+                        tempY -= selfSpacingVal;
                     }
                     messageYCoordinates[i] = tempY;
                     tempY -= verticalOffsetPerMsg;
@@ -922,7 +954,7 @@ namespace VisioDataMapper
                 // Alt box end
                 if (altsByEndIdx.ContainsKey(i - 1))
                 {
-                    tempY -= 0.25;
+                    tempY -= altSpacingVal;
                 }
             }
 
@@ -1094,8 +1126,8 @@ namespace VisioDataMapper
             // 9. Draw Alt Blocks (Framing)
             foreach (var block in altBlocks)
             {
-                double blockTop = messageYCoordinates[block.AltStartIdx] + 0.2;
-                double blockBottom = messageYCoordinates[block.EndIdx] - 0.25;
+                double blockTop = messageYCoordinates[block.AltStartIdx] + altSpacingVal;
+                double blockBottom = messageYCoordinates[block.EndIdx] - altSpacingVal;
                 
                 double frameLeft = startX - 0.35;
                 double frameRight = startX + totalActorsWidth + 0.35;
@@ -1117,7 +1149,7 @@ namespace VisioDataMapper
                 // Draw Else dashed line dividers
                 foreach (var branch in block.ElseBranches)
                 {
-                    double elseY = messageYCoordinates[branch.StartIdx] + 0.2;
+                    double elseY = messageYCoordinates[branch.StartIdx] + verticalOffsetPerMsg / 2.0;
                     Visio.Shape divider = page.DrawLine(frameLeft, elseY, frameRight, elseY);
                     TrySetFormula(divider, "LineColor", "RGB(100, 100, 100)");
                     TrySetFormula(divider, "LinePattern", "2"); // Dashed
@@ -1150,15 +1182,15 @@ namespace VisioDataMapper
                     // Draw loop-back 3-point connector
                     var loopShapes = new List<Visio.Shape>();
                     Visio.Shape seg1 = page.DrawLine(x1, y, x1 + 0.45, y);
-                    Visio.Shape seg2 = page.DrawLine(x1 + 0.45, y, x1 + 0.45, y - 0.22);
-                    Visio.Shape seg3 = page.DrawLine(x1 + 0.45, y - 0.22, x1, y - 0.22);
+                    Visio.Shape seg2 = page.DrawLine(x1 + 0.45, y, x1 + 0.45, y - selfSpacingVal * 0.9);
+                    Visio.Shape seg3 = page.DrawLine(x1 + 0.45, y - selfSpacingVal * 0.9, x1, y - selfSpacingVal * 0.9);
 
                     ApplyLineStyle(seg1, false, "0");
                     ApplyLineStyle(seg2, false, "0");
                     ApplyLineStyle(seg3, false, "4"); // Filled arrowhead at end
 
                     // Add text label
-                    Visio.Shape label = page.DrawRectangle(x1 + 0.05, y - 0.22, x1 + 1.8, y);
+                    Visio.Shape label = page.DrawRectangle(x1 + 0.05, y - selfSpacingVal * 0.9, x1 + 1.8, y);
                     label.Text = msg.Text;
                     ApplyTextShapeStyle(label, currentFontName, currentFontSize, false);
                     TrySetFormula(label, "FillPattern", "0");
