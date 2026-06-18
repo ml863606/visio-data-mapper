@@ -1035,6 +1035,9 @@ namespace VisioDataMapper
             }
 
             // 7. Calculate Activation Rects
+            var activeRectShapes = new Dictionary<string, Visio.Shape>();
+            var activeRectBottomYs = new Dictionary<string, double>();
+
             if (chkDrawActiveRect.Checked)
             {
                 double rectW = 0.12; // 3mm
@@ -1064,6 +1067,10 @@ namespace VisioDataMapper
                         TrySetFormula(activeRect, "FillForegnd", "RGB(255, 255, 255)");
                         TrySetFormula(activeRect, "LineColor", "RGB(0, 0, 0)");
                         TrySetFormula(activeRect, "LineWeight", "0.75pt");
+
+                        // Store shape and bounds
+                        activeRectShapes[p] = activeRect;
+                        activeRectBottomYs[p] = activeEndY;
                     }
                 }
             }
@@ -1177,25 +1184,67 @@ namespace VisioDataMapper
                 double x1 = lifelineXCoords[msg.Source];
                 double x2 = lifelineXCoords[msg.Target];
 
+                double rectW = 0.12; // activation rect width
+                double sourceOffset = chkDrawActiveRect.Checked ? (rectW / 2.0) : 0.02;
+                double targetOffset = sourceOffset + 0.09; // Adjust by 0.09 inches for the arrowhead length
+
                 if (msg.Type == "自关联")
                 {
-                    // Draw loop-back 3-point connector
+                    // Draw loop-back 3-point connector starting from the edge of the lifeline/activation bar
+                    double startXVal = x1 + sourceOffset;
                     var loopShapes = new List<Visio.Shape>();
-                    Visio.Shape seg1 = page.DrawLine(x1, y, x1 + 0.45, y);
-                    Visio.Shape seg2 = page.DrawLine(x1 + 0.45, y, x1 + 0.45, y - selfSpacingVal * 0.9);
-                    Visio.Shape seg3 = page.DrawLine(x1 + 0.45, y - selfSpacingVal * 0.9, x1, y - selfSpacingVal * 0.9);
+                    Visio.Shape seg1 = page.DrawLine(startXVal, y, startXVal + 0.45, y);
+                    Visio.Shape seg2 = page.DrawLine(startXVal + 0.45, y, startXVal + 0.45, y - selfSpacingVal * 0.9);
+                    
+                    bool canGlue = chkDrawActiveRect.Checked && activeRectShapes.ContainsKey(msg.Source);
+                    
+                    // Initial draw endX is startXVal if glued, otherwise startXVal + 0.09 (static fallback)
+                    double seg3EndX = canGlue ? startXVal : (startXVal + 0.09);
+                    Visio.Shape seg3 = page.DrawLine(startXVal + 0.45, y - selfSpacingVal * 0.9, seg3EndX, y - selfSpacingVal * 0.9);
 
                     ApplyLineStyle(seg1, false, "0");
                     ApplyLineStyle(seg2, false, "0");
                     ApplyLineStyle(seg3, false, "4"); // Filled arrowhead at end
 
-                    // Add text label
-                    Visio.Shape label = page.DrawRectangle(x1 + 0.05, y - selfSpacingVal * 0.9, x1 + 1.8, y);
+                    // Add text label (transparent background)
+                    Visio.Shape label = page.DrawRectangle(startXVal + 0.09, y - selfSpacingVal * 0.9, startXVal + 1.8, y);
                     label.Text = msg.Text;
                     ApplyTextShapeStyle(label, currentFontName, currentFontSize, false);
                     TrySetFormula(label, "FillPattern", "0");
                     TrySetFormula(label, "LinePattern", "0");
                     TrySetFormula(label, "Para.HorzAlign", "0"); // Left align
+
+                    if (canGlue)
+                    {
+                        var rect = activeRectShapes[msg.Source];
+                        double rectBottomY = activeRectBottomYs[msg.Source];
+                        
+                        try
+                        {
+                            // Add connection point for seg1 (BeginX)
+                            double y1Offset = y - rectBottomY;
+                            short row1 = rect.AddRow(
+                                (short)Visio.VisSectionIndices.visSectionConnectionPts,
+                                (short)Visio.VisRowIndices.visRowLast,
+                                (short)Visio.VisRowTags.visTagCnnctPt);
+                            rect.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, row1, (short)Visio.VisCellIndices.visCnnctX].FormulaU = "Width";
+                            rect.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, row1, (short)Visio.VisCellIndices.visCnnctY].FormulaU = $"{y1Offset.ToString(CultureInfo.InvariantCulture)} in";
+                            Visio.Cell cell1 = rect.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, row1, (short)Visio.VisCellIndices.visCnnctX];
+                            seg1.CellsU["BeginX"].GlueTo(cell1);
+
+                            // Add connection point for seg3 (EndX)
+                            double y3Offset = y - selfSpacingVal * 0.9 - rectBottomY;
+                            short row2 = rect.AddRow(
+                                (short)Visio.VisSectionIndices.visSectionConnectionPts,
+                                (short)Visio.VisRowIndices.visRowLast,
+                                (short)Visio.VisRowTags.visTagCnnctPt);
+                            rect.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, row2, (short)Visio.VisCellIndices.visCnnctX].FormulaU = "Width";
+                            rect.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, row2, (short)Visio.VisCellIndices.visCnnctY].FormulaU = $"{y3Offset.ToString(CultureInfo.InvariantCulture)} in";
+                            Visio.Cell cell2 = rect.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, row2, (short)Visio.VisCellIndices.visCnnctX];
+                            seg3.CellsU["EndX"].GlueTo(cell2);
+                        }
+                        catch { }
+                    }
 
                     loopShapes.Add(seg1);
                     loopShapes.Add(seg2);
@@ -1205,9 +1254,41 @@ namespace VisioDataMapper
                 }
                 else
                 {
-                    // Draw horizontal line always from left to right to ensure text orientation is correct
-                    double startXVal = Math.Min(x1, x2);
-                    double endXVal = Math.Max(x1, x2);
+                    double lineX1, lineX2;
+                    bool canGlue = chkDrawActiveRect.Checked && activeRectShapes.ContainsKey(msg.Source) && activeRectShapes.ContainsKey(msg.Target);
+
+                    if (canGlue)
+                    {
+                        // Use sourceOffset for both ends for initial draw coordinates (gluing will snap target perfectly)
+                        if (x1 < x2)
+                        {
+                            lineX1 = x1 + sourceOffset;
+                            lineX2 = x2 - sourceOffset;
+                        }
+                        else
+                        {
+                            lineX1 = x1 - sourceOffset;
+                            lineX2 = x2 + sourceOffset;
+                        }
+                    }
+                    else
+                    {
+                        // Fall back to targetOffset (including arrowhead size) for static coordinates
+                        if (x1 < x2)
+                        {
+                            lineX1 = x1 + sourceOffset;
+                            lineX2 = x2 - targetOffset;
+                        }
+                        else
+                        {
+                            lineX1 = x1 - sourceOffset;
+                            lineX2 = x2 + targetOffset;
+                        }
+                    }
+
+                    // Always draw from left to right to ensure text orientation is correct
+                    double startXVal = Math.Min(lineX1, lineX2);
+                    double endXVal = Math.Max(lineX1, lineX2);
                     Visio.Shape line = page.DrawLine(startXVal, y, endXVal, y);
                     line.Text = msg.Text;
                     
@@ -1236,8 +1317,13 @@ namespace VisioDataMapper
                     
                     ApplyTextShapeStyle(line, currentFontName, currentFontSize, false);
                     
-                    // Make text background white/opaque
-                    TrySetFormula(line, "TextBkgnd", "1");
+                    // Float label slightly above the line
+                    TrySetFormula(line, "TxtPinY", "0.08 in");
+
+                    if (canGlue)
+                    {
+                        GlueMessageLine(line, activeRectShapes[msg.Source], activeRectShapes[msg.Target], y, activeRectBottomYs[msg.Source], activeRectBottomYs[msg.Target], isRightToLeft);
+                    }
                 }
             }
         }
@@ -1377,6 +1463,8 @@ namespace VisioDataMapper
             TrySetFormula(shape, "Char.Style", bold ? "1" : "0");
             TrySetFormula(shape, "Para.HorzAlign", "1"); // Centered
             TrySetFormula(shape, "VerticalAlign", "1"); // Middle
+            TrySetFormula(shape, "TextBkgnd", "0"); // 0 is transparent background
+            TrySetFormula(shape, "TextBkgndTrans", "100%"); // 100% transparent
         }
 
         private Visio.Shape DrawStickActor(Visio.Page page, string name, double x, double y)
@@ -1464,6 +1552,54 @@ namespace VisioDataMapper
             try
             {
                 shape.CellsU[cellName].FormulaU = formula;
+            }
+            catch { }
+        }
+
+        private void GlueMessageLine(Visio.Shape line, Visio.Shape sourceRect, Visio.Shape targetRect, double y, double sourceYBottom, double targetYBottom, bool isRightToLeft)
+        {
+            try
+            {
+                // Source connection point:
+                // If isRightToLeft is true, source is on the right, so we connect to the left edge of the source rectangle (CnnctX = 0).
+                // If isRightToLeft is false, source is on the left, so we connect to the right edge of the source rectangle (CnnctX = Width).
+                string sourceXFormula = isRightToLeft ? "0" : "Width";
+                double sourceYOffset = y - sourceYBottom;
+                
+                short sourceRow = sourceRect.AddRow(
+                    (short)Visio.VisSectionIndices.visSectionConnectionPts,
+                    (short)Visio.VisRowIndices.visRowLast,
+                    (short)Visio.VisRowTags.visTagCnnctPt);
+                sourceRect.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, sourceRow, (short)Visio.VisCellIndices.visCnnctX].FormulaU = sourceXFormula;
+                sourceRect.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, sourceRow, (short)Visio.VisCellIndices.visCnnctY].FormulaU = $"{sourceYOffset.ToString(CultureInfo.InvariantCulture)} in";
+
+                // Target connection point:
+                // If isRightToLeft is true, target is on the left, so we connect to the right edge of the target rectangle (CnnctX = Width).
+                // If isRightToLeft is false, target is on the right, so we connect to the left edge of the target rectangle (CnnctX = 0).
+                string targetXFormula = isRightToLeft ? "Width" : "0";
+                double targetYOffset = y - targetYBottom;
+
+                short targetRow = targetRect.AddRow(
+                    (short)Visio.VisSectionIndices.visSectionConnectionPts,
+                    (short)Visio.VisRowIndices.visRowLast,
+                    (short)Visio.VisRowTags.visTagCnnctPt);
+                targetRect.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, targetRow, (short)Visio.VisCellIndices.visCnnctX].FormulaU = targetXFormula;
+                targetRect.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, targetRow, (short)Visio.VisCellIndices.visCnnctY].FormulaU = $"{targetYOffset.ToString(CultureInfo.InvariantCulture)} in";
+
+                // Glue
+                Visio.Cell sourceCell = sourceRect.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, sourceRow, (short)Visio.VisCellIndices.visCnnctX];
+                Visio.Cell targetCell = targetRect.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, targetRow, (short)Visio.VisCellIndices.visCnnctX];
+
+                if (isRightToLeft)
+                {
+                    line.CellsU["BeginX"].GlueTo(targetCell);
+                    line.CellsU["EndX"].GlueTo(sourceCell);
+                }
+                else
+                {
+                    line.CellsU["BeginX"].GlueTo(sourceCell);
+                    line.CellsU["EndX"].GlueTo(targetCell);
+                }
             }
             catch { }
         }
