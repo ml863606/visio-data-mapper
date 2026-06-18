@@ -29,3 +29,4 @@ D:\WorkSpace\mxl\ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\obj\D
 D:\WorkSpace\mxl\ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\obj\Debug\VisioDataMapper.dll
 D:\WorkSpace\mxl\ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\obj\Debug\VisioDataMapper.pdb
 D:\WorkSpace\mxl\ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\bin\Debug\Microsoft.Msagl.dll
+D:\WorkSpace\mxl\mxl-ai-tool\visio-data-mapper\VisioDataMapper\VisioDataMapper\bin\Debug\Microsoft.Msagl.dll

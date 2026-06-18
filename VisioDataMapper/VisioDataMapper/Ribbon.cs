@@ -92,8 +92,13 @@ namespace VisioDataMapper
                         form.ShowDialog();
                     }
                     return;
-                case "btnSeqNormal": featureName = "时序图 - 标准时序图"; break;
-                case "btnSeqLoop": featureName = "时序图 - 循环时序图"; break;
+                case "btnSeqNormal":
+                case "btnSeqLoop":
+                    using (var form = new FormSequenceDiagram())
+                    {
+                        form.ShowDialog();
+                    }
+                    return;
                 case "btnActivityDiagram": featureName = "活动图"; break;
                 case "btnStateDiagram": featureName = "状态图"; break;
                 case "btnDataFlow":

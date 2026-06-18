@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "YFlF8kgsFDE=",
+  "success": true,
+  "projectFilePath": "D:\\WorkSpace\\mxl\\mxl-ai-tool\\visio-data-mapper\\VisioDataMapper\\VisioDataMapper\\VisioDataMapper.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.msagl\\1.1.6\\microsoft.msagl.1.1.6.nupkg.sha512"
+  ],
+  "logs": []
+}
