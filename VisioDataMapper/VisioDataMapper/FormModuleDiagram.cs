@@ -50,6 +50,16 @@ namespace VisioDataMapper
         private double currentLineWidthPt = 0.75;
         private const double RootTopMarginInch = 1.45;
         private const double DefaultRootTopExtraGapInch = 0.35;
+        private const double DefaultFifthSizeFontPt = 10.5;
+        private const double DefaultDpi = 96.0;
+        private const double DefaultHorizontalPaddingChars = 2.0;
+        private const double DefaultVerticalShapeWidthChars = 1.5;
+        // 横着排列时表格“高(字)”的默认值。
+        private const double DefaultHorizontalShapeHeightChars = 1.0;
+        // 竖着排列时表格“形状间隔(px)”的默认值。
+        private const double DefaultVerticalShapeSpacingPx = 10.0;
+        private const double DefaultCharWidthMm = 3.7;
+        private const double DefaultCharHeightMm = 5.8;
         
         private const string StructurePrompt = "上面是我的功能模块资料，根据资料里的内容，帮我输出一个功能模块图 JSON 格式数据。要求格式如下：\n{\n  \"sys_name\": \"系统名称\",\n  \"platform\": [\n    {\n      \"name\": \"平台/角色名称\",\n      \"module\": [\n        {\n          \"name\": \"模块名称\",\n          \"sub\": [\n            \"功能名称1\",\n            \"功能名称2\"\n          ]\n        }\n      ]\n    }\n  ]\n}";
 
@@ -153,6 +163,8 @@ namespace VisioDataMapper
                 RowTemplate = { Height = 28 }
             };
             InitializeLevelGrid();
+            dgvLevels.CurrentCellDirtyStateChanged += dgvLevels_CurrentCellDirtyStateChanged;
+            dgvLevels.CellValueChanged += dgvLevels_CellValueChanged;
 
             lblLineWidth = new Label { Text = "连接线宽(pt):", Location = new Point(15, 765), Size = new Size(95, 22) };
             txtLineWidth = new TextBox { Text = "0.75", Location = new Point(115, 761), Size = new Size(60, 25) };
@@ -265,14 +277,14 @@ namespace VisioDataMapper
             dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "NodeCount", HeaderText = "节点数", ReadOnly = true, FillWeight = 55 });
             dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaxText", HeaderText = "最长文字", ReadOnly = true, FillWeight = 110 });
             dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "RootTopExtraGapInch", HeaderText = "RootTopExtraGapInch", FillWeight = 95 });
-            dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "LastLevelSpacingPx", HeaderText = "末层间距(px)", FillWeight = 85 });
+            dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "ShapeSpacingPx", HeaderText = "形状间隔(px)", FillWeight = 85 });
 
             var directionColumn = new DataGridViewComboBoxColumn { Name = "Direction", HeaderText = "形状排列", FillWeight = 90 };
             directionColumn.Items.AddRange("横着排列", "竖着排列");
             dgvLevels.Columns.Add(directionColumn);
 
-            dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "Width", HeaderText = "宽(mm)", FillWeight = 70 });
-            dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "Height", HeaderText = "高(mm)", FillWeight = 70 });
+            dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "Width", HeaderText = "宽(字)", FillWeight = 70 });
+            dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "Height", HeaderText = "高(字)", FillWeight = 70 });
         }
 
         private void FormModuleDiagram_Resize(object sender, EventArgs e)
@@ -364,6 +376,71 @@ namespace VisioDataMapper
             RefreshLevelOptions();
         }
 
+        private void dgvLevels_CurrentCellDirtyStateChanged(object sender, EventArgs e)
+        {
+            if (dgvLevels.IsCurrentCellDirty)
+            {
+                dgvLevels.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            }
+        }
+
+        private void dgvLevels_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        {
+            if (isUpdatingLevels || e.RowIndex < 0 || e.ColumnIndex < 0)
+            {
+                return;
+            }
+
+            if (dgvLevels.Columns[e.ColumnIndex].Name != "Direction")
+            {
+                return;
+            }
+
+            DataGridViewRow row = dgvLevels.Rows[e.RowIndex];
+            string direction = Convert.ToString(row.Cells["Direction"].Value);
+            string maxText = Convert.ToString(row.Cells["MaxText"].Value);
+            bool isVertical = direction == "竖着排列";
+            double widthChars;
+            double heightChars;
+
+            if (isVertical)
+            {
+                if (!TryParsePositiveNumber(Convert.ToString(row.Cells["Width"].Value), out widthChars) ||
+                    IsLegacyVerticalWidthValue(widthChars, maxText))
+                {
+                    row.Cells["Width"].Value = GetDefaultVerticalShapeWidthChars().ToString("0.#", CultureInfo.InvariantCulture);
+                }
+
+                if (!TryParsePositiveNumber(Convert.ToString(row.Cells["Height"].Value), out heightChars) ||
+                    IsLegacyHorizontalHeightValue(heightChars))
+                {
+                    row.Cells["Height"].Value = GetVerticalTextHeightChars(maxText).ToString("0.#", CultureInfo.InvariantCulture);
+                }
+
+                double spacingPx;
+                if (!TryParsePositiveNumber(Convert.ToString(row.Cells["ShapeSpacingPx"].Value), out spacingPx))
+                {
+                    row.Cells["ShapeSpacingPx"].Value = DefaultVerticalShapeSpacingPx.ToString("0.#", CultureInfo.InvariantCulture);
+                }
+            }
+            else
+            {
+                double horizontalWidthChars = GetHorizontalTextWidthChars(maxText);
+                if (!TryParsePositiveNumber(Convert.ToString(row.Cells["Width"].Value), out widthChars) ||
+                    widthChars < horizontalWidthChars ||
+                    IsLegacyHorizontalWidthValue(widthChars, maxText))
+                {
+                    row.Cells["Width"].Value = horizontalWidthChars.ToString("0.#", CultureInfo.InvariantCulture);
+                }
+
+                if (!TryParsePositiveNumber(Convert.ToString(row.Cells["Height"].Value), out heightChars) ||
+                    IsLegacyHorizontalHeightValue(heightChars))
+                {
+                    row.Cells["Height"].Value = DefaultHorizontalShapeHeightChars.ToString("0.#", CultureInfo.InvariantCulture);
+                }
+            }
+        }
+
         private void txtStructure_TextChanged(object sender, EventArgs e)
         {
             RefreshLevelOptions();
@@ -445,33 +522,39 @@ namespace VisioDataMapper
                 bool hasExistingOption = existingOptions.TryGetValue(level, out existingOption);
                 // 末层强制竖排，宽高重新自适应；其他层从已有选项读取，用户可手动调整
                 bool isVertical;
-                double widthMm;
-                double heightMm;
+                double widthChars;
+                double heightChars;
                 if (isLastLevel)
                 {
                     isVertical = true;
-                    widthMm = 14;
-                    heightMm = GetVerticalTextHeightMm(stat.LongestText);
+                    widthChars = hasExistingOption ? existingOption.WidthChars : GetDefaultVerticalShapeWidthChars();
+                    heightChars = hasExistingOption ? existingOption.HeightChars : GetVerticalTextHeightChars(stat.LongestText);
                 }
                 else
                 {
                     isVertical = hasExistingOption ? existingOption.IsVertical : false;
-                    widthMm = hasExistingOption ? existingOption.WidthMm : EstimateHorizontalWidthMm(stat.LongestText);
-                    heightMm = hasExistingOption ? existingOption.HeightMm : 10;
-                    if (isVertical)
-                    {
-                        heightMm = Math.Max(heightMm, GetVerticalTextHeightMm(stat.LongestText));
-                    }
+                    widthChars = hasExistingOption ? existingOption.WidthChars : (isVertical ? GetDefaultVerticalShapeWidthChars() : GetHorizontalTextWidthChars(stat.LongestText));
+                    heightChars = hasExistingOption ? existingOption.HeightChars : (isVertical ? GetVerticalTextHeightChars(stat.LongestText) : DefaultHorizontalShapeHeightChars);
+                }
+                if (isVertical)
+                {
+                    widthChars = NormalizeVerticalShapeWidthChars(widthChars, stat.LongestText);
+                    heightChars = NormalizeVerticalShapeHeightChars(heightChars, stat.LongestText);
+                }
+                else
+                {
+                    widthChars = NormalizeHorizontalShapeWidthChars(widthChars, stat.LongestText);
+                    heightChars = NormalizeHorizontalShapeHeightChars(heightChars);
                 }
                 double rootTopExtraGapInch = hasExistingOption ? existingOption.RootTopExtraGapInch : DefaultRootTopExtraGapInch;
                 if (level != 1)
                 {
                     rootTopExtraGapInch = 0;
                 }
-                double lastLevelSpacingPx = hasExistingOption ? existingOption.LastLevelSpacingPx : 2.0;
-                if (!isLastLevel)
+                double shapeSpacingPx = hasExistingOption ? existingOption.ShapeSpacingPx : (isVertical ? DefaultVerticalShapeSpacingPx : 0);
+                if (isVertical && IsLegacyVerticalShapeSpacingValue(shapeSpacingPx))
                 {
-                    lastLevelSpacingPx = 0;
+                    shapeSpacingPx = DefaultVerticalShapeSpacingPx;
                 }
 
                 var option = new LevelOption
@@ -480,10 +563,10 @@ namespace VisioDataMapper
                     NodeCount = stat.NodeCount,
                     MaxText = stat.LongestText,
                     IsVertical = isVertical,
-                    WidthMm = widthMm,
-                    HeightMm = heightMm,
+                    WidthChars = widthChars,
+                    HeightChars = heightChars,
                     RootTopExtraGapInch = rootTopExtraGapInch,
-                    LastLevelSpacingPx = lastLevelSpacingPx
+                    ShapeSpacingPx = shapeSpacingPx
                 };
                 levelOptions.Add(option);
 
@@ -492,10 +575,10 @@ namespace VisioDataMapper
                     stat.NodeCount,
                     stat.LongestText,
                     level == 1 ? rootTopExtraGapInch.ToString("0.###", CultureInfo.InvariantCulture) : string.Empty,
-                    isLastLevel ? lastLevelSpacingPx.ToString("0.#", CultureInfo.InvariantCulture) : string.Empty,
+                    isVertical ? shapeSpacingPx.ToString("0.#", CultureInfo.InvariantCulture) : string.Empty,
                     isVertical ? "竖着排列" : "横着排列",
-                    widthMm.ToString("0.#", CultureInfo.InvariantCulture),
-                    heightMm.ToString("0.#", CultureInfo.InvariantCulture));
+                    widthChars.ToString("0.#", CultureInfo.InvariantCulture),
+                    heightChars.ToString("0.#", CultureInfo.InvariantCulture));
             }
         }
 
@@ -525,17 +608,98 @@ namespace VisioDataMapper
             }
         }
 
-        private double EstimateHorizontalWidthMm(string text)
+        private double GetHorizontalTextWidthChars(string text)
+        {
+            return Math.Max(4.0, GetChineseCharCount(text) + DefaultHorizontalPaddingChars);
+        }
+
+        private double GetVerticalTextHeightChars(string text)
+        {
+            return GetChineseCharCount(text);
+        }
+
+        private double GetDefaultVerticalShapeWidthChars()
+        {
+            return DefaultVerticalShapeWidthChars;
+        }
+
+        private double NormalizeVerticalShapeWidthChars(double widthChars, string text)
+        {
+            if (IsLegacyVerticalWidthValue(widthChars, text))
+            {
+                return GetDefaultVerticalShapeWidthChars();
+            }
+
+            return widthChars;
+        }
+
+        private double NormalizeVerticalShapeHeightChars(double heightChars, string text)
+        {
+            if (IsLegacyVerticalHeightValue(heightChars, text))
+            {
+                return GetVerticalTextHeightChars(text);
+            }
+
+            return heightChars;
+        }
+
+        private double NormalizeHorizontalShapeWidthChars(double widthChars, string text)
+        {
+            double textWidthChars = GetHorizontalTextWidthChars(text);
+            if (widthChars < textWidthChars || IsLegacyHorizontalWidthValue(widthChars, text))
+            {
+                return textWidthChars;
+            }
+
+            return widthChars;
+        }
+
+        private double NormalizeHorizontalShapeHeightChars(double heightChars)
+        {
+            return IsLegacyHorizontalHeightValue(heightChars) ? DefaultHorizontalShapeHeightChars : heightChars;
+        }
+
+        private bool IsLegacyVerticalWidthValue(double widthValue, string text)
+        {
+            return Math.Abs(widthValue - 14.0) < 0.05 ||
+                Math.Abs(widthValue - 5.5) < 0.15 ||
+                Math.Abs(widthValue - 4.2) < 0.15 ||
+                Math.Abs(widthValue - EstimateLegacyHorizontalWidthMm(text)) < 0.05;
+        }
+
+        private bool IsLegacyHorizontalWidthValue(double widthValue, string text)
+        {
+            return Math.Abs(widthValue - EstimateLegacyHorizontalWidthMm(text)) < 0.05;
+        }
+
+        private bool IsLegacyHorizontalHeightValue(double heightValue)
+        {
+            return Math.Abs(heightValue - 10.0) < 0.05;
+        }
+
+        private bool IsLegacyVerticalHeightValue(double heightValue, string text)
+        {
+            return Math.Abs(heightValue - (GetChineseCharCount(text) + 2.0)) < 0.05;
+        }
+
+        private bool IsLegacyVerticalShapeSpacingValue(double spacingPx)
+        {
+            return Math.Abs(spacingPx - 1.0) < 0.05 || Math.Abs(spacingPx - 3.0) < 0.05;
+        }
+
+        private double EstimateLegacyHorizontalWidthMm(string text)
         {
             return Math.Max(28, GetChineseCharCount(text) * 5.2 + 12);
         }
 
-        private double GetVerticalTextHeightMm(string text)
+        private double WidthCharsToMm(double widthChars)
         {
-            double fontHeightMm = currentFontSizePt * 25.4 / 72.0;
-            double lineHeightMm = Math.Max(5.2, fontHeightMm * 1.65);
-            double paddingMm = 8.0;
-            return Math.Max(35, GetChineseCharCount(text) * lineHeightMm + paddingMm);
+            return Math.Max(DefaultCharWidthMm, widthChars * DefaultCharWidthMm);
+        }
+
+        private double HeightCharsToMm(double heightChars)
+        {
+            return Math.Max(DefaultCharHeightMm, heightChars * DefaultCharHeightMm);
         }
 
         private int GetChineseCharCount(string text)
@@ -559,11 +723,11 @@ namespace VisioDataMapper
                 }
 
                 int level;
-                double widthMm;
-                double heightMm;
+                double widthChars;
+                double heightChars;
                 if (!int.TryParse(Convert.ToString(row.Cells["Level"].Value), out level) ||
-                    !TryParsePositiveNumber(Convert.ToString(row.Cells["Width"].Value), out widthMm) ||
-                    !TryParsePositiveNumber(Convert.ToString(row.Cells["Height"].Value), out heightMm))
+                    !TryParsePositiveNumber(Convert.ToString(row.Cells["Width"].Value), out widthChars) ||
+                    !TryParsePositiveNumber(Convert.ToString(row.Cells["Height"].Value), out heightChars))
                 {
                     continue;
                 }
@@ -579,11 +743,11 @@ namespace VisioDataMapper
 
                     rootTopExtraGapInch = parsedRootTopExtraGapInch;
                 }
-                double lastLevelSpacingPx = 0;
-                double parsedLastLevelSpacingPx;
-                if (TryParsePositiveNumber(Convert.ToString(row.Cells["LastLevelSpacingPx"].Value), out parsedLastLevelSpacingPx))
+                double shapeSpacingPx = 0;
+                double parsedShapeSpacingPx;
+                if (TryParsePositiveNumber(Convert.ToString(row.Cells["ShapeSpacingPx"].Value), out parsedShapeSpacingPx))
                 {
-                    lastLevelSpacingPx = parsedLastLevelSpacingPx;
+                    shapeSpacingPx = parsedShapeSpacingPx;
                 }
 
                 result[level] = new LevelOption
@@ -592,10 +756,10 @@ namespace VisioDataMapper
                     NodeCount = row.Cells["NodeCount"].Value == null ? 0 : Convert.ToInt32(row.Cells["NodeCount"].Value),
                     MaxText = Convert.ToString(row.Cells["MaxText"].Value),
                     IsVertical = Convert.ToString(row.Cells["Direction"].Value) == "竖着排列",
-                    WidthMm = widthMm,
-                    HeightMm = heightMm,
+                    WidthChars = widthChars,
+                    HeightChars = heightChars,
                     RootTopExtraGapInch = rootTopExtraGapInch,
-                    LastLevelSpacingPx = lastLevelSpacingPx
+                    ShapeSpacingPx = shapeSpacingPx
                 };
             }
 
@@ -775,7 +939,7 @@ namespace VisioDataMapper
                 // The module diagram title is only used as form metadata; it is not rendered.
 
                 AppendLog("生成绘图完成！");
-                MessageBox.Show("功能模块图生成成功！", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                this.Close();
             }
             catch (Exception ex)
             {
@@ -867,35 +1031,45 @@ namespace VisioDataMapper
 
                 int level = Convert.ToInt32(row.Cells["Level"].Value);
                 string direction = Convert.ToString(row.Cells["Direction"].Value);
-                double widthMm = ParsePositiveMillimeters(Convert.ToString(row.Cells["Width"].Value), $"第{level}层宽度");
-                double heightMm = ParsePositiveMillimeters(Convert.ToString(row.Cells["Height"].Value), $"第{level}层高度");
+                string maxText = Convert.ToString(row.Cells["MaxText"].Value);
+                double widthChars = ParsePositiveNumber(Convert.ToString(row.Cells["Width"].Value), $"第{level}层宽度字符数");
+                double heightChars = ParsePositiveNumber(Convert.ToString(row.Cells["Height"].Value), $"第{level}层高度字符数");
                 bool isVertical = direction == "竖着排列";
                 if (isVertical)
                 {
-                    heightMm = Math.Max(heightMm, GetVerticalTextHeightMm(Convert.ToString(row.Cells["MaxText"].Value)));
+                    widthChars = NormalizeVerticalShapeWidthChars(widthChars, maxText);
+                }
+                else
+                {
+                    widthChars = NormalizeHorizontalShapeWidthChars(widthChars, maxText);
+                    heightChars = NormalizeHorizontalShapeHeightChars(heightChars);
                 }
                 double rootTopExtraGapInch = 0;
                 if (level == 1)
                 {
                     rootTopExtraGapInch = ParsePositiveNumber(Convert.ToString(row.Cells["RootTopExtraGapInch"].Value), "RootTopExtraGapInch");
                 }
-                double lastLevelSpacingPx = 0;
-                double parsedLastLevelSpacingPx;
-                if (TryParsePositiveNumber(Convert.ToString(row.Cells["LastLevelSpacingPx"].Value), out parsedLastLevelSpacingPx))
+                double shapeSpacingPx = 0;
+                double parsedShapeSpacingPx;
+                if (TryParsePositiveNumber(Convert.ToString(row.Cells["ShapeSpacingPx"].Value), out parsedShapeSpacingPx))
                 {
-                    lastLevelSpacingPx = parsedLastLevelSpacingPx;
+                    shapeSpacingPx = parsedShapeSpacingPx;
+                }
+                else if (isVertical)
+                {
+                    shapeSpacingPx = DefaultVerticalShapeSpacingPx;
                 }
 
                 result[level] = new LevelOption
                 {
                     Level = level,
                     NodeCount = Convert.ToInt32(row.Cells["NodeCount"].Value),
-                    MaxText = Convert.ToString(row.Cells["MaxText"].Value),
+                    MaxText = maxText,
                     IsVertical = isVertical,
-                    WidthMm = widthMm,
-                    HeightMm = heightMm,
+                    WidthChars = widthChars,
+                    HeightChars = heightChars,
                     RootTopExtraGapInch = rootTopExtraGapInch,
-                    LastLevelSpacingPx = lastLevelSpacingPx
+                    ShapeSpacingPx = shapeSpacingPx
                 };
             }
 
@@ -926,10 +1100,10 @@ namespace VisioDataMapper
             public int NodeCount { get; set; }
             public string MaxText { get; set; }
             public bool IsVertical { get; set; }
-            public double WidthMm { get; set; }
-            public double HeightMm { get; set; }
+            public double WidthChars { get; set; }
+            public double HeightChars { get; set; }
             public double RootTopExtraGapInch { get; set; }
-            public double LastLevelSpacingPx { get; set; }
+            public double ShapeSpacingPx { get; set; }
         }
 
         private class LevelStats
@@ -1026,13 +1200,13 @@ namespace VisioDataMapper
                 childrenSize += child.SubtreeSize;
             }
 
-            double spacing = GetSiblingSpacing(node, horSpacing, verSpacing, isLeftToRight);
+            double spacing = GetSiblingSpacing(node, horSpacing, verSpacing, optionsByLevel, isLeftToRight);
             childrenSize += (node.Children.Count - 1) * spacing;
 
             node.SubtreeSize = Math.Max(selfSize, childrenSize);
         }
 
-        private double GetSiblingSpacing(TreeNode parent, double horSpacing, double verSpacing, bool isLeftToRight)
+        private double GetSiblingSpacing(TreeNode parent, double horSpacing, double verSpacing, Dictionary<int, LevelOption> optionsByLevel, bool isLeftToRight)
         {
             double defaultSpacing = isLeftToRight ? verSpacing : horSpacing;
             if (parent == null || parent.Children.Count == 0)
@@ -1040,36 +1214,17 @@ namespace VisioDataMapper
                 return defaultSpacing;
             }
 
-            bool childrenAreLastLevel = true;
-            foreach (var child in parent.Children)
+            int childLevel = GetNodeDepth(parent.Children[0]);
+            LevelOption option;
+            if (optionsByLevel != null &&
+                optionsByLevel.TryGetValue(childLevel, out option) &&
+                option.IsVertical &&
+                option.ShapeSpacingPx > 0)
             {
-                if (child.Children.Count > 0)
-                {
-                    childrenAreLastLevel = false;
-                    break;
-                }
+                return option.ShapeSpacingPx / DefaultDpi;
             }
 
-            return childrenAreLastLevel ? GetLastLevelCompactSpacingInch(parent) : defaultSpacing;
-        }
-
-        private double GetLastLevelCompactSpacingInch(TreeNode parent)
-        {
-            double spacingPx = 2.0;
-            if (parent != null && parent.Children.Count > 0)
-            {
-                int lastLevel = GetNodeDepth(parent.Children[0]);
-                foreach (var option in levelOptions)
-                {
-                    if (option.Level == lastLevel && option.LastLevelSpacingPx > 0)
-                    {
-                        spacingPx = option.LastLevelSpacingPx;
-                        break;
-                    }
-                }
-            }
-
-            return spacingPx / 96.0;
+            return defaultSpacing;
         }
 
         private int GetNodeDepth(TreeNode node)
@@ -1089,7 +1244,7 @@ namespace VisioDataMapper
         {
             if (node.Children.Count == 0 || level >= selectedMaxLevel) return;
 
-            double spacing = GetSiblingSpacing(node, horSpacing, verSpacing, isLeftToRight);
+            double spacing = GetSiblingSpacing(node, horSpacing, verSpacing, optionsByLevel, isLeftToRight);
             double totalSize = 0;
             foreach (var child in node.Children)
             {
@@ -1347,8 +1502,8 @@ namespace VisioDataMapper
             LevelOption option;
             if (optionsByLevel != null && optionsByLevel.TryGetValue(level, out option))
             {
-                width = option.WidthMm / 25.4;
-                height = option.HeightMm / 25.4;
+                width = WidthCharsToMm(option.WidthChars) / 25.4;
+                height = HeightCharsToMm(option.HeightChars) / 25.4;
                 return;
             }
 
