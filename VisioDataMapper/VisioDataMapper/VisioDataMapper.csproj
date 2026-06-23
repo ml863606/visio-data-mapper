@@ -242,6 +242,9 @@
     <Compile Include="DfdSemanticLayout.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DfdHybridLayout.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <EmbeddedResource Include="Ribbon.xml" />
     <AppDesigner Include="Properties\" />
     <None Include="VisioDataMapper_TemporaryKey.pfx" />
