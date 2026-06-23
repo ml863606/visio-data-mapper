@@ -41,7 +41,7 @@ namespace VisioDataMapper
         private Label lblFontName;
         private ComboBox cmbFontName;
         private Label lblFontSize;
-        private TextBox txtFontSize;
+        private ComboBox cmbFontSize;
         private Label lblLineWidth;
         private TextBox txtLineWidth;
         private CheckBox chkArrow;
@@ -55,13 +55,13 @@ namespace VisioDataMapper
         private double currentDefaultHorizontalShapeHeightChars = DefaultHorizontalShapeHeightChars;
         private double currentDefaultVerticalShapeSpacingPx = DefaultVerticalShapeSpacingPx;
         private const double RootTopMarginInch = 1.45;
-        private const double DefaultRootTopExtraGapInch = 0.35;
+        private const double DefaultRootTopExtraGapInch = 0;
         private const double DefaultFifthSizeFontPt = 10.5;
         private const double DefaultDpi = 96.0;
         private const double DefaultHorizontalPaddingChars = 2.0;
         private const double DefaultVerticalShapeWidthChars = 1.5;
         // 横着排列时表格“高(字)”的默认值。
-        private const double DefaultHorizontalShapeHeightChars = 2.0;
+        private const double DefaultHorizontalShapeHeightChars = 1.0;
         // 竖着排列时表格“形状间隔(px)”的默认值。
         private const double DefaultVerticalShapeSpacingPx = 10.0;
         private const double DefaultCharWidthMm = 3.7;
@@ -155,7 +155,10 @@ namespace VisioDataMapper
             cmbFontName.SelectedIndex = 0;
 
             lblFontSize = new Label { Text = "字号:", Location = new Point(955, 605), Size = new Size(40, 22) };
-            txtFontSize = new TextBox { Text = "10.5", Location = new Point(1000, 601), Size = new Size(55, 25) };
+            cmbFontSize = new ComboBox { Location = new Point(1000, 601), Size = new Size(70, 25), DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbFontSize.Items.AddRange(new string[] { "三号", "小三", "四号", "小四", "五号", "小五" });
+            cmbFontSize.SelectedItem = "五号";
+            cmbFontSize.SelectedIndexChanged += cmbFontSize_SelectedIndexChanged;
 
             lblLevelCount = new Label { Text = "共 0 个层级", Location = new Point(15, 605), Size = new Size(100, 22) };
             lblSelectLevel = new Label { Text = "生成层级选择:", Location = new Point(125, 605), Size = new Size(100, 22) };
@@ -217,7 +220,7 @@ namespace VisioDataMapper
             this.Controls.Add(lblFontName);
             this.Controls.Add(cmbFontName);
             this.Controls.Add(lblFontSize);
-            this.Controls.Add(txtFontSize);
+            this.Controls.Add(cmbFontSize);
             this.Controls.Add(lblLevelCount);
             this.Controls.Add(lblSelectLevel);
             this.Controls.Add(cmbSelectLevel);
@@ -242,21 +245,21 @@ namespace VisioDataMapper
       ""name"": ""管理员"",
       ""module"": [
         {
-          ""name"": ""管理员模块1"",
+          ""name"": ""管理员模块一"",
           ""sub"": [
-            ""管理员功能功能1"",
-            ""管理员功能功能2"",
-            ""管理员功能功能3"",
-            ""管理员功能功能4""
+            ""管理员功能一"",
+            ""管理员功能二"",
+            ""管理员功能三"",
+            ""管理员功能四""
           ]
         },
         {
-          ""name"": ""管理员模块2"",
+          ""name"": ""管理员模块二"",
           ""sub"": [
-            ""管理员功能功能21"",
-            ""管理员功能功能22"",
-            ""管理员功能功能23"",
-            ""管理员功能功能24""
+            ""管理员功能一"",
+            ""管理员功能二"",
+            ""管理员功能三"",
+            ""管理员功能四""
           ]
         }
       ]
@@ -265,21 +268,21 @@ namespace VisioDataMapper
       ""name"": ""用户"",
       ""module"": [
         {
-          ""name"": ""用户模块1"",
+          ""name"": ""用户模块一"",
           ""sub"": [
-            ""用户功能功能1"",
-            ""用户功能功能2"",
-            ""用户功能功能3"",
-            ""用户功能功能4""
+            ""用户功能一"",
+            ""用户功能二"",
+            ""用户功能三"",
+            ""用户功能四""
           ]
         },
         {
-          ""name"": ""用户模块2"",
+          ""name"": ""用户模块二"",
           ""sub"": [
-            ""用户功能功能21"",
-            ""用户功能功能22"",
-            ""用户功能功能23"",
-            ""用户功能功能24""
+            ""用户功能一"",
+            ""用户功能二"",
+            ""用户功能三"",
+            ""用户功能四""
           ]
         }
       ]
@@ -361,7 +364,7 @@ namespace VisioDataMapper
             lblFontName.Top = secondRowTop + 4;
             cmbFontName.Top = secondRowTop;
             lblFontSize.Top = secondRowTop + 4;
-            txtFontSize.Top = secondRowTop;
+            cmbFontSize.Top = secondRowTop;
 
             int rightEdge = margin + width;
             txtDefaultVerticalSpacing.Left = rightEdge - txtDefaultVerticalSpacing.Width;
@@ -369,8 +372,8 @@ namespace VisioDataMapper
             txtDefaultHorizontalHeight.Left = lblDefaultVerticalSpacing.Left - txtDefaultHorizontalHeight.Width - 15;
             lblDefaultHorizontalHeight.Left = txtDefaultHorizontalHeight.Left - lblDefaultHorizontalHeight.Width - 5;
 
-            txtFontSize.Left = rightEdge - txtFontSize.Width;
-            lblFontSize.Left = txtFontSize.Left - lblFontSize.Width - 5;
+            cmbFontSize.Left = rightEdge - cmbFontSize.Width;
+            lblFontSize.Left = cmbFontSize.Left - lblFontSize.Width - 5;
             cmbFontName.Left = lblFontSize.Left - cmbFontName.Width - 15;
             lblFontName.Left = cmbFontName.Left - lblFontName.Width - 5;
 
@@ -408,6 +411,12 @@ namespace VisioDataMapper
         private void DefaultLevelSetting_TextChanged(object sender, EventArgs e)
         {
             if (isUpdatingLevels) return;
+            RefreshLevelOptions();
+        }
+
+        private void cmbFontSize_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            currentFontSizePt = GetSelectedFontSizePt();
             RefreshLevelOptions();
         }
 
@@ -488,11 +497,7 @@ namespace VisioDataMapper
                 return;
             }
 
-            double parsedFontSize;
-            if (txtFontSize != null && TryParsePositiveNumber(txtFontSize.Text, out parsedFontSize))
-            {
-                currentFontSizePt = parsedFontSize;
-            }
+            currentFontSizePt = GetSelectedFontSizePt();
             double previousDefaultHorizontalHeightChars = currentDefaultHorizontalShapeHeightChars;
             double previousDefaultVerticalSpacingPx = currentDefaultVerticalShapeSpacingPx;
             UpdateCurrentDefaultLevelSettings();
@@ -754,6 +759,27 @@ namespace VisioDataMapper
             }
         }
 
+        private double GetSelectedFontSizePt()
+        {
+            string selectedSize = cmbFontSize == null || cmbFontSize.SelectedItem == null ? "五号" : cmbFontSize.SelectedItem.ToString();
+            switch (selectedSize)
+            {
+                case "三号":
+                    return 16.0;
+                case "小三":
+                    return 15.0;
+                case "四号":
+                    return 14.0;
+                case "小四":
+                    return 12.0;
+                case "小五":
+                    return 9.0;
+                case "五号":
+                default:
+                    return 10.5;
+            }
+        }
+
         private double EstimateLegacyHorizontalWidthMm(string text)
         {
             return Math.Max(28, GetChineseCharCount(text) * 5.2 + 12);
@@ -803,7 +829,7 @@ namespace VisioDataMapper
                 if (level == 1)
                 {
                     double parsedRootTopExtraGapInch;
-                    if (!TryParsePositiveNumber(Convert.ToString(row.Cells["RootTopExtraGapInch"].Value), out parsedRootTopExtraGapInch))
+                    if (!TryParseNonNegativeNumber(Convert.ToString(row.Cells["RootTopExtraGapInch"].Value), out parsedRootTopExtraGapInch))
                     {
                         parsedRootTopExtraGapInch = DefaultRootTopExtraGapInch;
                     }
@@ -962,7 +988,7 @@ namespace VisioDataMapper
                 double verSpacingVal = ParsePositiveMillimeters(txtVerSpacing.Text, "纵向间距") / 25.4;
                 Dictionary<int, LevelOption> optionsByLevel = ReadLevelOptionsFromGrid();
                 currentFontName = cmbFontName.SelectedItem == null ? "宋体" : cmbFontName.SelectedItem.ToString();
-                currentFontSizePt = ParsePositiveNumber(txtFontSize.Text, "字号");
+                currentFontSizePt = GetSelectedFontSizePt();
                 currentLineWidthPt = ParsePositiveNumber(txtLineWidth.Text, "连接线宽度");
                 bool isLeftToRight = cmbDirection.SelectedItem.ToString() == "从左到右";
 
@@ -1073,6 +1099,17 @@ namespace VisioDataMapper
             return parsedValue;
         }
 
+        private double ParseNonNegativeNumber(string value, string fieldName)
+        {
+            double parsedValue;
+            if (!TryParseNonNegativeNumber(value, out parsedValue))
+            {
+                throw new ArgumentException($"{fieldName}必须是大于等于0的数字。");
+            }
+
+            return parsedValue;
+        }
+
         private bool TryParsePositiveNumber(string value, out double parsedValue)
         {
             string normalizedValue = (value ?? string.Empty).Trim().Replace('，', '.');
@@ -1083,6 +1120,18 @@ namespace VisioDataMapper
             }
 
             return parsedValue > 0;
+        }
+
+        private bool TryParseNonNegativeNumber(string value, out double parsedValue)
+        {
+            string normalizedValue = (value ?? string.Empty).Trim().Replace('，', '.');
+            if (!double.TryParse(normalizedValue, NumberStyles.Float, CultureInfo.CurrentCulture, out parsedValue) &&
+                !double.TryParse(normalizedValue, NumberStyles.Float, CultureInfo.InvariantCulture, out parsedValue))
+            {
+                return false;
+            }
+
+            return parsedValue >= 0;
         }
 
         private Dictionary<int, LevelOption> ReadLevelOptionsFromGrid()
@@ -1115,7 +1164,7 @@ namespace VisioDataMapper
                 double rootTopExtraGapInch = 0;
                 if (level == 1)
                 {
-                    rootTopExtraGapInch = ParsePositiveNumber(Convert.ToString(row.Cells["RootTopExtraGapInch"].Value), "RootTopExtraGapInch");
+                    rootTopExtraGapInch = ParseNonNegativeNumber(Convert.ToString(row.Cells["RootTopExtraGapInch"].Value), "RootTopExtraGapInch");
                 }
                 double shapeSpacingPx = 0;
                 double parsedShapeSpacingPx;
@@ -1547,7 +1596,7 @@ namespace VisioDataMapper
         private double GetRootTopExtraGapInch(Dictionary<int, LevelOption> optionsByLevel)
         {
             LevelOption option;
-            if (optionsByLevel != null && optionsByLevel.TryGetValue(1, out option) && option.RootTopExtraGapInch > 0)
+            if (optionsByLevel != null && optionsByLevel.TryGetValue(1, out option) && option.RootTopExtraGapInch >= 0)
             {
                 return option.RootTopExtraGapInch;
             }
