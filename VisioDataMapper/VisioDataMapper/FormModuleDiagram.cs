@@ -55,11 +55,12 @@ namespace VisioDataMapper
         private double currentDefaultHorizontalShapeHeightChars = DefaultHorizontalShapeHeightChars;
         private double currentDefaultVerticalShapeSpacingPx = DefaultVerticalShapeSpacingPx;
         private const double RootTopMarginInch = 1.45;
-        private const double DefaultRootTopExtraGapInch = 0;
         private const double DefaultFifthSizeFontPt = 10.5;
         private const double DefaultDpi = 96.0;
         private const double DefaultHorizontalPaddingChars = 2.0;
         private const double DefaultVerticalShapeWidthChars = 1.5;
+        // 主布局“纵向间距(mm)”的默认值，用于控制上下层节点之间的距离。
+        private const double DefaultVerticalSpacingMm = 8.0;
         // 横着排列时表格“高(字)”的默认值。
         private const double DefaultHorizontalShapeHeightChars = 1.0;
         // 竖着排列时表格“形状间隔(px)”的默认值。
@@ -139,7 +140,7 @@ namespace VisioDataMapper
             txtHorSpacing = new TextBox { Text = "12", Location = new Point(520, 566), Size = new Size(60, 25) };
 
             lblVerSpacing = new Label { Text = "纵向间距(mm):", Location = new Point(600, 570), Size = new Size(100, 22) };
-            txtVerSpacing = new TextBox { Text = "14", Location = new Point(705, 566), Size = new Size(60, 25) };
+            txtVerSpacing = new TextBox { Text = DefaultVerticalSpacingMm.ToString("0.#", CultureInfo.InvariantCulture), Location = new Point(705, 566), Size = new Size(60, 25) };
 
             lblDefaultHorizontalHeight = new Label { Text = "横排默认高(字):", Location = new Point(785, 570), Size = new Size(110, 22) };
             txtDefaultHorizontalHeight = new TextBox { Text = DefaultHorizontalShapeHeightChars.ToString("0.#", CultureInfo.InvariantCulture), Location = new Point(900, 566), Size = new Size(45, 25) };
@@ -297,7 +298,6 @@ namespace VisioDataMapper
             dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "Level", HeaderText = "层级", ReadOnly = true, FillWeight = 45 });
             dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "NodeCount", HeaderText = "节点数", ReadOnly = true, FillWeight = 55 });
             dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaxText", HeaderText = "最长文字", ReadOnly = true, FillWeight = 110 });
-            dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "RootTopExtraGapInch", HeaderText = "RootTopExtraGapInch", FillWeight = 95 });
             dgvLevels.Columns.Add(new DataGridViewTextBoxColumn { Name = "ShapeSpacingPx", HeaderText = "形状间隔(px)", FillWeight = 85 });
 
             var directionColumn = new DataGridViewComboBoxColumn { Name = "Direction", HeaderText = "形状排列", FillWeight = 90 };
@@ -589,11 +589,6 @@ namespace VisioDataMapper
                     widthChars = NormalizeHorizontalShapeWidthChars(widthChars, stat.LongestText);
                     heightChars = NormalizeHorizontalShapeHeightChars(heightChars, previousDefaultHorizontalHeightChars);
                 }
-                double rootTopExtraGapInch = hasExistingOption ? existingOption.RootTopExtraGapInch : DefaultRootTopExtraGapInch;
-                if (level != 1)
-                {
-                    rootTopExtraGapInch = 0;
-                }
                 double shapeSpacingPx = hasExistingOption ? existingOption.ShapeSpacingPx : (isVertical ? currentDefaultVerticalShapeSpacingPx : 0);
                 if (isVertical && IsDefaultLikeVerticalShapeSpacingValue(shapeSpacingPx, previousDefaultVerticalSpacingPx))
                 {
@@ -608,7 +603,6 @@ namespace VisioDataMapper
                     IsVertical = isVertical,
                     WidthChars = widthChars,
                     HeightChars = heightChars,
-                    RootTopExtraGapInch = rootTopExtraGapInch,
                     ShapeSpacingPx = shapeSpacingPx
                 };
                 levelOptions.Add(option);
@@ -617,7 +611,6 @@ namespace VisioDataMapper
                     level,
                     stat.NodeCount,
                     stat.LongestText,
-                    level == 1 ? rootTopExtraGapInch.ToString("0.###", CultureInfo.InvariantCulture) : string.Empty,
                     isVertical ? shapeSpacingPx.ToString("0.#", CultureInfo.InvariantCulture) : string.Empty,
                     isVertical ? "竖着排列" : "横着排列",
                     widthChars.ToString("0.#", CultureInfo.InvariantCulture),
@@ -825,17 +818,6 @@ namespace VisioDataMapper
                     continue;
                 }
 
-                double rootTopExtraGapInch = 0;
-                if (level == 1)
-                {
-                    double parsedRootTopExtraGapInch;
-                    if (!TryParseNonNegativeNumber(Convert.ToString(row.Cells["RootTopExtraGapInch"].Value), out parsedRootTopExtraGapInch))
-                    {
-                        parsedRootTopExtraGapInch = DefaultRootTopExtraGapInch;
-                    }
-
-                    rootTopExtraGapInch = parsedRootTopExtraGapInch;
-                }
                 double shapeSpacingPx = 0;
                 double parsedShapeSpacingPx;
                 if (TryParsePositiveNumber(Convert.ToString(row.Cells["ShapeSpacingPx"].Value), out parsedShapeSpacingPx))
@@ -851,7 +833,6 @@ namespace VisioDataMapper
                     IsVertical = Convert.ToString(row.Cells["Direction"].Value) == "竖着排列",
                     WidthChars = widthChars,
                     HeightChars = heightChars,
-                    RootTopExtraGapInch = rootTopExtraGapInch,
                     ShapeSpacingPx = shapeSpacingPx
                 };
             }
@@ -1099,17 +1080,6 @@ namespace VisioDataMapper
             return parsedValue;
         }
 
-        private double ParseNonNegativeNumber(string value, string fieldName)
-        {
-            double parsedValue;
-            if (!TryParseNonNegativeNumber(value, out parsedValue))
-            {
-                throw new ArgumentException($"{fieldName}必须是大于等于0的数字。");
-            }
-
-            return parsedValue;
-        }
-
         private bool TryParsePositiveNumber(string value, out double parsedValue)
         {
             string normalizedValue = (value ?? string.Empty).Trim().Replace('，', '.');
@@ -1120,18 +1090,6 @@ namespace VisioDataMapper
             }
 
             return parsedValue > 0;
-        }
-
-        private bool TryParseNonNegativeNumber(string value, out double parsedValue)
-        {
-            string normalizedValue = (value ?? string.Empty).Trim().Replace('，', '.');
-            if (!double.TryParse(normalizedValue, NumberStyles.Float, CultureInfo.CurrentCulture, out parsedValue) &&
-                !double.TryParse(normalizedValue, NumberStyles.Float, CultureInfo.InvariantCulture, out parsedValue))
-            {
-                return false;
-            }
-
-            return parsedValue >= 0;
         }
 
         private Dictionary<int, LevelOption> ReadLevelOptionsFromGrid()
@@ -1161,11 +1119,6 @@ namespace VisioDataMapper
                     widthChars = NormalizeHorizontalShapeWidthChars(widthChars, maxText);
                     heightChars = NormalizeHorizontalShapeHeightChars(heightChars);
                 }
-                double rootTopExtraGapInch = 0;
-                if (level == 1)
-                {
-                    rootTopExtraGapInch = ParseNonNegativeNumber(Convert.ToString(row.Cells["RootTopExtraGapInch"].Value), "RootTopExtraGapInch");
-                }
                 double shapeSpacingPx = 0;
                 double parsedShapeSpacingPx;
                 if (TryParsePositiveNumber(Convert.ToString(row.Cells["ShapeSpacingPx"].Value), out parsedShapeSpacingPx))
@@ -1185,7 +1138,6 @@ namespace VisioDataMapper
                     IsVertical = isVertical,
                     WidthChars = widthChars,
                     HeightChars = heightChars,
-                    RootTopExtraGapInch = rootTopExtraGapInch,
                     ShapeSpacingPx = shapeSpacingPx
                 };
             }
@@ -1208,7 +1160,6 @@ namespace VisioDataMapper
             // Width or Height of this node's subtree (depends on orientation)
             public double SubtreeSize { get; set; }
             public Visio.Shape VisioShape { get; set; }
-            public Visio.Shape RouteAnchorShape { get; set; }
         }
 
         private class LevelOption
@@ -1219,7 +1170,6 @@ namespace VisioDataMapper
             public bool IsVertical { get; set; }
             public double WidthChars { get; set; }
             public double HeightChars { get; set; }
-            public double RootTopExtraGapInch { get; set; }
             public double ShapeSpacingPx { get; set; }
         }
 
@@ -1516,12 +1466,6 @@ namespace VisioDataMapper
         {
             if (parent.VisioShape == null || child.VisioShape == null) return;
 
-            if (parentLevel == 1 && !isLeftToRight)
-            {
-                DrawRootTopConnector(page, parent, child, defaultWidth, defaultHeight, optionsByLevel, parentLevel, childLevel);
-                return;
-            }
-
             DrawAutoConnector(page, parent.VisioShape, child.VisioShape, isLeftToRight);
         }
 
@@ -1548,69 +1492,6 @@ namespace VisioDataMapper
             Visio.Cell endCell = connector.CellsU["EndX"];
             endCell.GlueTo(endShape.CellsU["PinX"]);
 
-            return connector;
-        }
-
-        private void DrawRootTopConnector(Visio.Page page, TreeNode parent, TreeNode child, double defaultWidth, double defaultHeight, Dictionary<int, LevelOption> optionsByLevel, int parentLevel, int childLevel)
-        {
-            double parentWidth;
-            double parentHeight;
-            double childWidth;
-            double childHeight;
-            GetShapeSize(parentLevel, defaultWidth, defaultHeight, optionsByLevel, out parentWidth, out parentHeight);
-            GetShapeSize(childLevel, defaultWidth, defaultHeight, optionsByLevel, out childWidth, out childHeight);
-
-            double beginX = parent.X;
-            double beginY = parent.Y - parentHeight / 2.0;
-            double branchY = beginY - GetRootTopExtraGapInch(optionsByLevel);
-
-            if (parent.RouteAnchorShape == null)
-            {
-                parent.RouteAnchorShape = CreateHiddenRouteAnchor(page, beginX, branchY);
-                DrawAutoConnector(page, parent.VisioShape, parent.RouteAnchorShape, false);
-            }
-
-            DrawAutoConnector(page, parent.RouteAnchorShape, child.VisioShape, false);
-        }
-
-        private Visio.Shape CreateHiddenRouteAnchor(Visio.Page page, double centerX, double centerY)
-        {
-            double size = 0.02;
-            Visio.Shape anchor = page.DrawRectangle(centerX - size / 2.0, centerY - size / 2.0, centerX + size / 2.0, centerY + size / 2.0);
-            anchor.Text = string.Empty;
-            anchor.CellsU["FillPattern"].Formula = "0";
-            anchor.CellsU["LinePattern"].Formula = "0";
-            anchor.CellsU["Char.Color"].Formula = "RGB(255, 255, 255)";
-            anchor.CellsU["Char.Size"].FormulaU = "1pt";
-            TrySetFormula(anchor, "TxtPinX", "Width*0.5");
-            TrySetFormula(anchor, "TxtPinY", "Height*0.5");
-            TrySetFormula(anchor, "TxtWidth", "Width");
-            TrySetFormula(anchor, "TxtHeight", "Height");
-            TrySetFormula(anchor, "LeftMargin", "0");
-            TrySetFormula(anchor, "RightMargin", "0");
-            TrySetFormula(anchor, "TopMargin", "0");
-            TrySetFormula(anchor, "BottomMargin", "0");
-            return anchor;
-        }
-
-        private double GetRootTopExtraGapInch(Dictionary<int, LevelOption> optionsByLevel)
-        {
-            LevelOption option;
-            if (optionsByLevel != null && optionsByLevel.TryGetValue(1, out option) && option.RootTopExtraGapInch >= 0)
-            {
-                return option.RootTopExtraGapInch;
-            }
-
-            return DefaultRootTopExtraGapInch;
-        }
-
-        private Visio.Shape DrawAcademicLine(Visio.Page page, double beginX, double beginY, double endX, double endY)
-        {
-            Visio.Shape connector = page.DrawLine(beginX, beginY, endX, endY);
-            connector.CellsU["LineColor"].Formula = "RGB(0, 0, 0)";
-            connector.CellsU["LineWeight"].Formula = $"{currentLineWidthPt.ToString(CultureInfo.InvariantCulture)}pt";
-            connector.CellsU["BeginArrow"].Formula = "0";
-            connector.CellsU["EndArrow"].Formula = "0";
             return connector;
         }
 
