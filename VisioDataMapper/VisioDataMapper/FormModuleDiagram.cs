@@ -28,6 +28,10 @@ namespace VisioDataMapper
         private TextBox txtHorSpacing;
         private Label lblVerSpacing;
         private TextBox txtVerSpacing;
+        private Label lblDefaultHorizontalHeight;
+        private TextBox txtDefaultHorizontalHeight;
+        private Label lblDefaultVerticalSpacing;
+        private TextBox txtDefaultVerticalSpacing;
 
         private Label lblLevelCount;
         private Label lblSelectLevel;
@@ -48,6 +52,8 @@ namespace VisioDataMapper
         private string currentFontName = "宋体";
         private double currentFontSizePt = 10.5;
         private double currentLineWidthPt = 0.75;
+        private double currentDefaultHorizontalShapeHeightChars = DefaultHorizontalShapeHeightChars;
+        private double currentDefaultVerticalShapeSpacingPx = DefaultVerticalShapeSpacingPx;
         private const double RootTopMarginInch = 1.45;
         private const double DefaultRootTopExtraGapInch = 0.35;
         private const double DefaultFifthSizeFontPt = 10.5;
@@ -55,7 +61,7 @@ namespace VisioDataMapper
         private const double DefaultHorizontalPaddingChars = 2.0;
         private const double DefaultVerticalShapeWidthChars = 1.5;
         // 横着排列时表格“高(字)”的默认值。
-        private const double DefaultHorizontalShapeHeightChars = 1.0;
+        private const double DefaultHorizontalShapeHeightChars = 2.0;
         // 竖着排列时表格“形状间隔(px)”的默认值。
         private const double DefaultVerticalShapeSpacingPx = 10.0;
         private const double DefaultCharWidthMm = 3.7;
@@ -135,13 +141,21 @@ namespace VisioDataMapper
             lblVerSpacing = new Label { Text = "纵向间距(mm):", Location = new Point(600, 570), Size = new Size(100, 22) };
             txtVerSpacing = new TextBox { Text = "14", Location = new Point(705, 566), Size = new Size(60, 25) };
 
-            lblFontName = new Label { Text = "字体:", Location = new Point(785, 570), Size = new Size(40, 22) };
-            cmbFontName = new ComboBox { Location = new Point(830, 566), Size = new Size(110, 25), DropDownStyle = ComboBoxStyle.DropDownList };
+            lblDefaultHorizontalHeight = new Label { Text = "横排默认高(字):", Location = new Point(785, 570), Size = new Size(110, 22) };
+            txtDefaultHorizontalHeight = new TextBox { Text = DefaultHorizontalShapeHeightChars.ToString("0.#", CultureInfo.InvariantCulture), Location = new Point(900, 566), Size = new Size(45, 25) };
+            txtDefaultHorizontalHeight.TextChanged += DefaultLevelSetting_TextChanged;
+
+            lblDefaultVerticalSpacing = new Label { Text = "竖排间隔(px):", Location = new Point(955, 570), Size = new Size(95, 22) };
+            txtDefaultVerticalSpacing = new TextBox { Text = DefaultVerticalShapeSpacingPx.ToString("0.#", CultureInfo.InvariantCulture), Location = new Point(1055, 566), Size = new Size(45, 25) };
+            txtDefaultVerticalSpacing.TextChanged += DefaultLevelSetting_TextChanged;
+
+            lblFontName = new Label { Text = "字体:", Location = new Point(785, 605), Size = new Size(40, 22) };
+            cmbFontName = new ComboBox { Location = new Point(830, 601), Size = new Size(110, 25), DropDownStyle = ComboBoxStyle.DropDownList };
             cmbFontName.Items.AddRange(new string[] { "宋体", "黑体", "仿宋", "楷体", "微软雅黑" });
             cmbFontName.SelectedIndex = 0;
 
-            lblFontSize = new Label { Text = "字号:", Location = new Point(955, 570), Size = new Size(40, 22) };
-            txtFontSize = new TextBox { Text = "10.5", Location = new Point(1000, 566), Size = new Size(55, 25) };
+            lblFontSize = new Label { Text = "字号:", Location = new Point(955, 605), Size = new Size(40, 22) };
+            txtFontSize = new TextBox { Text = "10.5", Location = new Point(1000, 601), Size = new Size(55, 25) };
 
             lblLevelCount = new Label { Text = "共 0 个层级", Location = new Point(15, 605), Size = new Size(100, 22) };
             lblSelectLevel = new Label { Text = "生成层级选择:", Location = new Point(125, 605), Size = new Size(100, 22) };
@@ -195,6 +209,10 @@ namespace VisioDataMapper
             this.Controls.Add(txtHorSpacing);
             this.Controls.Add(lblVerSpacing);
             this.Controls.Add(txtVerSpacing);
+            this.Controls.Add(lblDefaultHorizontalHeight);
+            this.Controls.Add(txtDefaultHorizontalHeight);
+            this.Controls.Add(lblDefaultVerticalSpacing);
+            this.Controls.Add(txtDefaultVerticalSpacing);
 
             this.Controls.Add(lblFontName);
             this.Controls.Add(cmbFontName);
@@ -334,22 +352,33 @@ namespace VisioDataMapper
             txtHorSpacing.Top = rowTop;
             lblVerSpacing.Top = rowTop + 4;
             txtVerSpacing.Top = rowTop;
-            lblFontName.Top = rowTop + 4;
-            cmbFontName.Top = rowTop;
-            lblFontSize.Top = rowTop + 4;
-            txtFontSize.Top = rowTop;
+            lblDefaultHorizontalHeight.Top = rowTop + 4;
+            txtDefaultHorizontalHeight.Top = rowTop;
+            lblDefaultVerticalSpacing.Top = rowTop + 4;
+            txtDefaultVerticalSpacing.Top = rowTop;
+
+            int secondRowTop = rowTop + 35;
+            lblFontName.Top = secondRowTop + 4;
+            cmbFontName.Top = secondRowTop;
+            lblFontSize.Top = secondRowTop + 4;
+            txtFontSize.Top = secondRowTop;
 
             int rightEdge = margin + width;
+            txtDefaultVerticalSpacing.Left = rightEdge - txtDefaultVerticalSpacing.Width;
+            lblDefaultVerticalSpacing.Left = txtDefaultVerticalSpacing.Left - lblDefaultVerticalSpacing.Width - 5;
+            txtDefaultHorizontalHeight.Left = lblDefaultVerticalSpacing.Left - txtDefaultHorizontalHeight.Width - 15;
+            lblDefaultHorizontalHeight.Left = txtDefaultHorizontalHeight.Left - lblDefaultHorizontalHeight.Width - 5;
+
             txtFontSize.Left = rightEdge - txtFontSize.Width;
             lblFontSize.Left = txtFontSize.Left - lblFontSize.Width - 5;
             cmbFontName.Left = lblFontSize.Left - cmbFontName.Width - 15;
             lblFontName.Left = cmbFontName.Left - lblFontName.Width - 5;
 
-            lblLevelCount.Top = rowTop + 35;
+            lblLevelCount.Top = secondRowTop + 4;
             lblLevelCount.Width = 100;
-            lblSelectLevel.Top = rowTop + 35;
+            lblSelectLevel.Top = secondRowTop + 4;
             lblSelectLevel.Left = lblLevelCount.Right + 10;
-            cmbSelectLevel.Top = rowTop + 31;
+            cmbSelectLevel.Top = secondRowTop;
             cmbSelectLevel.Left = lblSelectLevel.Right + 5;
             dgvLevels.Top = lblLevelCount.Bottom + 5;
             dgvLevels.Width = width;
@@ -371,6 +400,12 @@ namespace VisioDataMapper
         }
 
         private void cmbSelectLevel_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (isUpdatingLevels) return;
+            RefreshLevelOptions();
+        }
+
+        private void DefaultLevelSetting_TextChanged(object sender, EventArgs e)
         {
             if (isUpdatingLevels) return;
             RefreshLevelOptions();
@@ -420,7 +455,7 @@ namespace VisioDataMapper
                 double spacingPx;
                 if (!TryParsePositiveNumber(Convert.ToString(row.Cells["ShapeSpacingPx"].Value), out spacingPx))
                 {
-                    row.Cells["ShapeSpacingPx"].Value = DefaultVerticalShapeSpacingPx.ToString("0.#", CultureInfo.InvariantCulture);
+                    row.Cells["ShapeSpacingPx"].Value = currentDefaultVerticalShapeSpacingPx.ToString("0.#", CultureInfo.InvariantCulture);
                 }
             }
             else
@@ -436,7 +471,7 @@ namespace VisioDataMapper
                 if (!TryParsePositiveNumber(Convert.ToString(row.Cells["Height"].Value), out heightChars) ||
                     IsLegacyHorizontalHeightValue(heightChars))
                 {
-                    row.Cells["Height"].Value = DefaultHorizontalShapeHeightChars.ToString("0.#", CultureInfo.InvariantCulture);
+                    row.Cells["Height"].Value = currentDefaultHorizontalShapeHeightChars.ToString("0.#", CultureInfo.InvariantCulture);
                 }
             }
         }
@@ -458,6 +493,9 @@ namespace VisioDataMapper
             {
                 currentFontSizePt = parsedFontSize;
             }
+            double previousDefaultHorizontalHeightChars = currentDefaultHorizontalShapeHeightChars;
+            double previousDefaultVerticalSpacingPx = currentDefaultVerticalShapeSpacingPx;
+            UpdateCurrentDefaultLevelSettings();
 
             Dictionary<int, LevelOption> existingOptions = ReadExistingLevelOptionsFromGrid();
             TreeNode root = null;
@@ -534,7 +572,7 @@ namespace VisioDataMapper
                 {
                     isVertical = hasExistingOption ? existingOption.IsVertical : false;
                     widthChars = hasExistingOption ? existingOption.WidthChars : (isVertical ? GetDefaultVerticalShapeWidthChars() : GetHorizontalTextWidthChars(stat.LongestText));
-                    heightChars = hasExistingOption ? existingOption.HeightChars : (isVertical ? GetVerticalTextHeightChars(stat.LongestText) : DefaultHorizontalShapeHeightChars);
+                    heightChars = hasExistingOption ? existingOption.HeightChars : (isVertical ? GetVerticalTextHeightChars(stat.LongestText) : currentDefaultHorizontalShapeHeightChars);
                 }
                 if (isVertical)
                 {
@@ -544,17 +582,17 @@ namespace VisioDataMapper
                 else
                 {
                     widthChars = NormalizeHorizontalShapeWidthChars(widthChars, stat.LongestText);
-                    heightChars = NormalizeHorizontalShapeHeightChars(heightChars);
+                    heightChars = NormalizeHorizontalShapeHeightChars(heightChars, previousDefaultHorizontalHeightChars);
                 }
                 double rootTopExtraGapInch = hasExistingOption ? existingOption.RootTopExtraGapInch : DefaultRootTopExtraGapInch;
                 if (level != 1)
                 {
                     rootTopExtraGapInch = 0;
                 }
-                double shapeSpacingPx = hasExistingOption ? existingOption.ShapeSpacingPx : (isVertical ? DefaultVerticalShapeSpacingPx : 0);
-                if (isVertical && IsLegacyVerticalShapeSpacingValue(shapeSpacingPx))
+                double shapeSpacingPx = hasExistingOption ? existingOption.ShapeSpacingPx : (isVertical ? currentDefaultVerticalShapeSpacingPx : 0);
+                if (isVertical && IsDefaultLikeVerticalShapeSpacingValue(shapeSpacingPx, previousDefaultVerticalSpacingPx))
                 {
-                    shapeSpacingPx = DefaultVerticalShapeSpacingPx;
+                    shapeSpacingPx = currentDefaultVerticalShapeSpacingPx;
                 }
 
                 var option = new LevelOption
@@ -656,7 +694,12 @@ namespace VisioDataMapper
 
         private double NormalizeHorizontalShapeHeightChars(double heightChars)
         {
-            return IsLegacyHorizontalHeightValue(heightChars) ? DefaultHorizontalShapeHeightChars : heightChars;
+            return NormalizeHorizontalShapeHeightChars(heightChars, DefaultHorizontalShapeHeightChars);
+        }
+
+        private double NormalizeHorizontalShapeHeightChars(double heightChars, double previousDefaultHeightChars)
+        {
+            return IsDefaultLikeHorizontalHeightValue(heightChars, previousDefaultHeightChars) ? currentDefaultHorizontalShapeHeightChars : heightChars;
         }
 
         private bool IsLegacyVerticalWidthValue(double widthValue, string text)
@@ -677,14 +720,38 @@ namespace VisioDataMapper
             return Math.Abs(heightValue - 10.0) < 0.05;
         }
 
+        private bool IsDefaultLikeHorizontalHeightValue(double heightValue, double previousDefaultHeightChars)
+        {
+            return IsLegacyHorizontalHeightValue(heightValue) ||
+                Math.Abs(heightValue - previousDefaultHeightChars) < 0.05 ||
+                Math.Abs(heightValue - DefaultHorizontalShapeHeightChars) < 0.05;
+        }
+
         private bool IsLegacyVerticalHeightValue(double heightValue, string text)
         {
             return Math.Abs(heightValue - (GetChineseCharCount(text) + 2.0)) < 0.05;
         }
 
-        private bool IsLegacyVerticalShapeSpacingValue(double spacingPx)
+        private bool IsDefaultLikeVerticalShapeSpacingValue(double spacingPx, double previousDefaultSpacingPx)
         {
-            return Math.Abs(spacingPx - 1.0) < 0.05 || Math.Abs(spacingPx - 3.0) < 0.05;
+            return Math.Abs(spacingPx - 1.0) < 0.05 ||
+                Math.Abs(spacingPx - 3.0) < 0.05 ||
+                Math.Abs(spacingPx - previousDefaultSpacingPx) < 0.05 ||
+                Math.Abs(spacingPx - DefaultVerticalShapeSpacingPx) < 0.05;
+        }
+
+        private void UpdateCurrentDefaultLevelSettings()
+        {
+            double parsedValue;
+            if (txtDefaultHorizontalHeight != null && TryParsePositiveNumber(txtDefaultHorizontalHeight.Text, out parsedValue))
+            {
+                currentDefaultHorizontalShapeHeightChars = parsedValue;
+            }
+
+            if (txtDefaultVerticalSpacing != null && TryParsePositiveNumber(txtDefaultVerticalSpacing.Text, out parsedValue))
+            {
+                currentDefaultVerticalShapeSpacingPx = parsedValue;
+            }
         }
 
         private double EstimateLegacyHorizontalWidthMm(string text)
@@ -1021,6 +1088,7 @@ namespace VisioDataMapper
         private Dictionary<int, LevelOption> ReadLevelOptionsFromGrid()
         {
             var result = new Dictionary<int, LevelOption>();
+            UpdateCurrentDefaultLevelSettings();
 
             foreach (DataGridViewRow row in dgvLevels.Rows)
             {
@@ -1057,7 +1125,7 @@ namespace VisioDataMapper
                 }
                 else if (isVertical)
                 {
-                    shapeSpacingPx = DefaultVerticalShapeSpacingPx;
+                    shapeSpacingPx = currentDefaultVerticalShapeSpacingPx;
                 }
 
                 result[level] = new LevelOption
