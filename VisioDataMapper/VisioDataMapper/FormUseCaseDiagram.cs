@@ -66,15 +66,15 @@ namespace VisioDataMapper
             MinimizeBox = false;
             Font defaultFont = new Font("Microsoft YaHei", 9F, FontStyle.Regular);
             Font = defaultFont;
-            this.BackColor = Color.FromArgb(240, 244, 248);
+            this.BackColor = SystemColors.Control;
 
             Label lblTip = new Label
             {
                 Text = "请将UML用例JSON或PlantUML复制到剪贴板，点击导入文本后自动渲染。",
                 Location = new Point(15, 20),
                 AutoSize = true,
-                ForeColor = Color.FromArgb(90, 107, 124),
-                Font = new Font("Microsoft YaHei", 9.5F, FontStyle.Regular)
+                ForeColor = SystemColors.ControlText,
+                Font = defaultFont
             };
 
             btnImportJson = new Button 
@@ -82,40 +82,31 @@ namespace VisioDataMapper
                 Text = "导入文本", 
                 Location = new Point(15, 50), 
                 Size = new Size(130, 36),
-                FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(0, 122, 255),
-                ForeColor = Color.White,
-                Font = new Font("Microsoft YaHei", 9.5F, FontStyle.Bold),
-                TabStop = false,
-                UseVisualStyleBackColor = false,
-                Cursor = Cursors.Hand
+                Font = defaultFont
             };
-            btnImportJson.FlatAppearance.BorderSize = 0;
-            btnImportJson.FlatAppearance.MouseDownBackColor = Color.FromArgb(0, 105, 219);
-            btnImportJson.FlatAppearance.MouseOverBackColor = Color.FromArgb(0, 130, 255);
             btnImportJson.Click += btnImportJson_Click;
 
             lblTitle = new Label 
             { 
                 Text = "大标题:", 
                 AutoSize = true,
-                ForeColor = Color.FromArgb(74, 85, 104),
-                Font = new Font("Microsoft YaHei", 9.5F, FontStyle.Regular)
+                ForeColor = SystemColors.ControlText,
+                Font = defaultFont
             };
             
             pnlTitleBorder = new Panel
             {
-                BackColor = Color.FromArgb(218, 224, 233),
-                Padding = new Padding(1),
+                BackColor = SystemColors.Control,
+                Padding = new Padding(0),
                 Location = new Point(535, 54),
                 Size = new Size(340, 28)
             };
             txtTitle = new TextBox 
             { 
                 Text = systemName,
-                BorderStyle = BorderStyle.None,
+                BorderStyle = BorderStyle.Fixed3D,
                 Dock = DockStyle.Fill,
-                Font = new Font("Microsoft YaHei", 10F, FontStyle.Regular),
+                Font = defaultFont,
                 BackColor = Color.White
             };
             pnlTitleBorder.Controls.Add(txtTitle);
@@ -133,35 +124,7 @@ namespace VisioDataMapper
                 Size = new Size(864, 459),
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
                 Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular),
-                DrawMode = TabDrawMode.OwnerDrawFixed,
                 Padding = new Point(15, 6)
-            };
-            tabActors.DrawItem += (s, e) =>
-            {
-                var tabCtrl = (TabControl)s;
-                var tabPage = tabCtrl.TabPages[e.Index];
-                var tabRect = tabCtrl.GetTabRect(e.Index);
-                tabRect.Inflate(2, 2);
-
-                bool isSelected = tabCtrl.SelectedIndex == e.Index;
-                using (var bgBrush = new SolidBrush(isSelected ? Color.White : Color.FromArgb(226, 232, 240)))
-                {
-                    e.Graphics.FillRectangle(bgBrush, tabRect);
-                }
-
-                using (var textBrush = new SolidBrush(isSelected ? Color.FromArgb(0, 122, 255) : Color.FromArgb(100, 116, 139)))
-                {
-                    string text = tabPage.Text;
-                    var sf = new StringFormat
-                    {
-                        Alignment = StringAlignment.Center,
-                        LineAlignment = StringAlignment.Center
-                    };
-                    using (var font = new Font(tabCtrl.Font, isSelected ? FontStyle.Bold : FontStyle.Regular))
-                    {
-                        e.Graphics.DrawString(text, font, textBrush, tabRect, sf);
-                    }
-                }
             };
             pnlTabContainer.Controls.Add(tabActors);
 
@@ -192,8 +155,8 @@ namespace VisioDataMapper
 
             pnlStatusBorder = new Panel
             {
-                BackColor = Color.FromArgb(218, 224, 233),
-                Padding = new Padding(1),
+                BackColor = SystemColors.Control,
+                Padding = new Padding(0),
                 Location = new Point(15, 580),
                 Size = new Size(860, 78)
             };
@@ -202,95 +165,71 @@ namespace VisioDataMapper
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical,
                 ReadOnly = true,
-                BackColor = Color.FromArgb(248, 250, 252),
-                ForeColor = Color.FromArgb(100, 116, 139),
-                BorderStyle = BorderStyle.None,
+                BackColor = SystemColors.Control,
+                ForeColor = Color.DarkGray,
+                BorderStyle = BorderStyle.Fixed3D,
                 Dock = DockStyle.Fill,
                 Text = $"{DateTime.Now:HH:mm:ss} 请在上方“JSON数据”文本框中粘贴JSON进行渲染。"
             };
             pnlStatusBorder.Controls.Add(txtStatus);
 
-            lblActorShape = new Label { Text = "参与者形状:", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(3, 6, 3, 3) };
+            lblActorShape = new Label { Text = "参与者形状:", AutoSize = true, ForeColor = SystemColors.ControlText, Margin = new Padding(3, 6, 3, 3) };
             cmbActorShape = new ComboBox { Size = new Size(110, 26), DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular), Margin = new Padding(3, 3, 15, 3) };
             cmbActorShape.Items.AddRange(new string[] { "Draw.Io风格", "Visio自带" });
             cmbActorShape.SelectedIndex = 0;
 
-            chkEnglishRelationText = new CheckBox { Text = "关系线条使用英文字符", AutoSize = true, Checked = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(5, 5, 15, 3) };
-            chkShowFunctionNodes = new CheckBox { Text = "显示功能节点", AutoSize = true, Checked = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(5, 5, 15, 3) };
-            chkUseCaseOutline = new CheckBox { Text = "模块/功能添加外边框", AutoSize = true, Checked = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(5, 5, 15, 3) };
+            chkEnglishRelationText = new CheckBox { Text = "关系线条使用英文字符", AutoSize = true, Checked = true, ForeColor = SystemColors.ControlText, Margin = new Padding(5, 5, 15, 3) };
+            chkShowFunctionNodes = new CheckBox { Text = "显示功能节点", AutoSize = true, Checked = true, ForeColor = SystemColors.ControlText, Margin = new Padding(5, 5, 15, 3) };
+            chkUseCaseOutline = new CheckBox { Text = "模块/功能添加外边框", AutoSize = true, Checked = true, ForeColor = SystemColors.ControlText, Margin = new Padding(5, 5, 15, 3) };
 
-            lblLayout = new Label { Text = "排版:", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(3, 6, 3, 3) };
+            lblLayout = new Label { Text = "排版:", AutoSize = true, ForeColor = SystemColors.ControlText, Margin = new Padding(3, 6, 3, 3) };
             cmbLayout = new ComboBox { Size = new Size(130, 26), DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular), Margin = new Padding(3, 3, 15, 3) };
             cmbLayout.Items.AddRange(new string[] { "参与者均在左侧", "参与者均在右侧", "参与者左右分布" });
             cmbLayout.SelectedIndex = 0;
 
-            lblFontName = new Label { Text = "字体:", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(3, 6, 3, 3) };
+            lblFontName = new Label { Text = "字体:", AutoSize = true, ForeColor = SystemColors.ControlText, Margin = new Padding(3, 6, 3, 3) };
             cmbFontName = CreateFontCombo(new Point(0, 0));
             cmbFontName.Margin = new Padding(3, 3, 15, 3);
-            lblFontSize = new Label { Text = "字号:", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(3, 6, 3, 3) };
+            lblFontSize = new Label { Text = "字号:", AutoSize = true, ForeColor = SystemColors.ControlText, Margin = new Padding(3, 6, 3, 3) };
             cmbFontSize = CreateFontSizeCombo(new Point(0, 0));
             cmbFontSize.Margin = new Padding(3, 3, 15, 3);
 
-            lblSpacing = new Label { Text = "横纵间距:", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(3, 6, 3, 3) };
+            lblSpacing = new Label { Text = "横纵间距:", AutoSize = true, ForeColor = SystemColors.ControlText, Margin = new Padding(3, 6, 3, 3) };
             
-            Panel pnlHorSpacingBorder = new Panel { BackColor = Color.FromArgb(218, 224, 233), Padding = new Padding(1), Size = new Size(40, 24), Margin = new Padding(3, 3, 5, 3) };
-            txtHorizontalSpacing = new TextBox { Text = "15", BorderStyle = BorderStyle.None, Dock = DockStyle.Fill, Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular), TextAlign = HorizontalAlignment.Center };
+            Panel pnlHorSpacingBorder = new Panel { BackColor = SystemColors.Control, Padding = new Padding(0), Size = new Size(40, 24), Margin = new Padding(3, 3, 5, 3) };
+            txtHorizontalSpacing = new TextBox { Text = "15", BorderStyle = BorderStyle.Fixed3D, Dock = DockStyle.Fill, Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular), TextAlign = HorizontalAlignment.Center };
             pnlHorSpacingBorder.Controls.Add(txtHorizontalSpacing);
 
-            Panel pnlVerSpacingBorder = new Panel { BackColor = Color.FromArgb(218, 224, 233), Padding = new Padding(1), Size = new Size(40, 24), Margin = new Padding(3, 3, 5, 3) };
-            txtVerticalSpacing = new TextBox { Text = "8", BorderStyle = BorderStyle.None, Dock = DockStyle.Fill, Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular), TextAlign = HorizontalAlignment.Center };
+            Panel pnlVerSpacingBorder = new Panel { BackColor = SystemColors.Control, Padding = new Padding(0), Size = new Size(40, 24), Margin = new Padding(3, 3, 5, 3) };
+            txtVerticalSpacing = new TextBox { Text = "8", BorderStyle = BorderStyle.Fixed3D, Dock = DockStyle.Fill, Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular), TextAlign = HorizontalAlignment.Center };
             pnlVerSpacingBorder.Controls.Add(txtVerticalSpacing);
 
-            lblMillimeter = new Label { Text = "mm", AutoSize = true, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(0, 6, 15, 3) };
-            chkAssociationArrow = new CheckBox { Text = "关联连线画箭头", AutoSize = true, Checked = false, ForeColor = Color.FromArgb(74, 85, 104), Margin = new Padding(5, 5, 15, 3) };
+            lblMillimeter = new Label { Text = "mm", AutoSize = true, ForeColor = SystemColors.ControlText, Margin = new Padding(0, 6, 15, 3) };
+            chkAssociationArrow = new CheckBox { Text = "关联连线画箭头", AutoSize = true, Checked = false, ForeColor = SystemColors.ControlText, Margin = new Padding(5, 5, 15, 3) };
 
             btnGenerate = new Button 
             { 
                 Text = "生成绘图", 
                 Size = new Size(120, 36), 
-                BackColor = Color.FromArgb(40, 167, 69), 
-                ForeColor = Color.White, 
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Microsoft YaHei", 10F, FontStyle.Bold),
-                TabStop = false,
-                UseVisualStyleBackColor = false,
-                Cursor = Cursors.Hand
+                BackColor = Color.LightSkyBlue, 
+                ForeColor = SystemColors.ControlText, 
+                Font = new Font(defaultFont, FontStyle.Bold)
             };
-            btnGenerate.FlatAppearance.BorderSize = 0;
-            btnGenerate.FlatAppearance.MouseDownBackColor = Color.FromArgb(35, 150, 62);
-            btnGenerate.FlatAppearance.MouseOverBackColor = Color.FromArgb(46, 184, 77);
             btnGenerate.Click += btnGenerate_Click;
 
             btnClose = new Button 
             { 
                 Text = "关闭", 
                 Size = new Size(100, 36),
-                BackColor = Color.FromArgb(233, 236, 239),
-                ForeColor = Color.FromArgb(73, 80, 87),
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Microsoft YaHei", 9.5F, FontStyle.Regular),
-                TabStop = false,
-                UseVisualStyleBackColor = false,
-                Cursor = Cursors.Hand
+                Font = defaultFont
             };
-            btnClose.FlatAppearance.BorderSize = 0;
-            btnClose.FlatAppearance.MouseDownBackColor = Color.FromArgb(215, 218, 222);
-            btnClose.FlatAppearance.MouseOverBackColor = Color.FromArgb(241, 243, 245);
             btnClose.Click += btnClose_Click;
 
             pnlOptions = new Panel
             {
-                BackColor = Color.White,
+                BackColor = SystemColors.Control,
                 BorderStyle = BorderStyle.None,
                 Height = 135
-            };
-            pnlOptions.Paint += (s, pe) =>
-            {
-                using (var pen = new Pen(Color.FromArgb(218, 224, 233), 1))
-                {
-                    pe.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                    pe.Graphics.DrawRectangle(pen, 0, 0, pnlOptions.Width - 1, pnlOptions.Height - 1);
-                }
             };
 
             FlowLayoutPanel row1 = new FlowLayoutPanel { Location = new Point(5, 5), Size = new Size(700, 36), Padding = new Padding(0) };

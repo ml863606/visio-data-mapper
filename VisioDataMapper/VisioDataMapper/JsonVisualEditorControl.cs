@@ -64,7 +64,7 @@ namespace VisioDataMapper
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
                 Padding = new Padding(6, 5, 6, 3),
-                BackColor = Color.FromArgb(248, 250, 252)
+                BackColor = SystemColors.Control
             };
 
             btnFormat = CreateToolbarButton("格式化", NodeIconKind.Format);
@@ -145,9 +145,8 @@ namespace VisioDataMapper
                 TextAlign = ContentAlignment.MiddleRight,
                 AutoSize = true,
                 Height = 26,
-                FlatStyle = FlatStyle.Flat,
-                BackColor = Color.White,
-                ForeColor = Color.FromArgb(31, 41, 55),
+                BackColor = SystemColors.Control,
+                ForeColor = SystemColors.ControlText,
                 Padding = new Padding(5, 0, 6, 0),
                 Margin = new Padding(0, 0, 8, 0)
             };
