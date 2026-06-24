@@ -35,6 +35,15 @@ namespace VisioDataMapper
         public void OnAction(Office.IRibbonControl control)
         {
             string featureName = "未知功能";
+            if (control.Id == "btnBasicFlowchart")
+            {
+                using (var form = new FormBasicFlowchart())
+                {
+                    form.ShowDialog();
+                }
+                return;
+            }
+
             switch (control.Id)
             {
                 // 会员信息
