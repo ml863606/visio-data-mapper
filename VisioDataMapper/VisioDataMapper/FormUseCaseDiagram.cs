@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
 using Visio = Microsoft.Office.Interop.Visio;
@@ -22,7 +23,9 @@ namespace VisioDataMapper
         private TabControl tabActors;
         private Panel pnlTabContainer;
         private TabPage tabJson;
+        private TabPage tabPlantUml;
         private TextBox txtJsonInput;
+        private TextBox txtPlantUmlInput;
         private Panel pnlOptions;
         private ComboBox cmbActorShape;
         private ComboBox cmbFontName;
@@ -67,7 +70,7 @@ namespace VisioDataMapper
 
             Label lblTip = new Label
             {
-                Text = "请将UML用例JSON复制到剪贴板，点击导入JSON后自动渲染。",
+                Text = "请将UML用例JSON或PlantUML复制到剪贴板，点击导入文本后自动渲染。",
                 Location = new Point(15, 20),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(90, 107, 124),
@@ -76,7 +79,7 @@ namespace VisioDataMapper
 
             btnImportJson = new Button 
             { 
-                Text = "导入JSON", 
+                Text = "导入文本", 
                 Location = new Point(15, 50), 
                 Size = new Size(130, 36),
                 FlatStyle = FlatStyle.Flat,
@@ -164,19 +167,36 @@ namespace VisioDataMapper
 
             tabJson = new TabPage("JSON数据");
             tabJson.BackColor = Color.White;
+            tabJson.Text = "JSON数据";
             txtJsonInput = new TextBox
             {
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical,
                 Dock = DockStyle.Fill,
                 Font = new Font("Consolas", 10F, FontStyle.Regular),
-                Text = string.Empty,
+                Text = GetSampleJson(),
                 BorderStyle = BorderStyle.None,
                 BackColor = Color.White
             };
             txtJsonInput.TextChanged += txtJsonInput_TextChanged;
             tabJson.Controls.Add(txtJsonInput);
             tabActors.TabPages.Add(tabJson);
+
+            tabPlantUml = new TabPage("PlantUML");
+            tabPlantUml.BackColor = Color.White;
+            txtPlantUmlInput = new TextBox
+            {
+                Multiline = true,
+                ScrollBars = ScrollBars.Vertical,
+                Dock = DockStyle.Fill,
+                Font = new Font("Consolas", 10F, FontStyle.Regular),
+                Text = GetSamplePlantUml(),
+                BorderStyle = BorderStyle.None,
+                BackColor = Color.White
+            };
+            txtPlantUmlInput.TextChanged += txtPlantUmlInput_TextChanged;
+            tabPlantUml.Controls.Add(txtPlantUmlInput);
+            tabActors.TabPages.Add(tabPlantUml);
 
             pnlStatusBorder = new Panel
             {
@@ -420,6 +440,59 @@ namespace VisioDataMapper
             LayoutControls();
         }
 
+        private string GetSampleJson()
+        {
+            return
+@"{
+  ""system"": ""话费充值系统"",
+  ""actors"": [
+    {
+      ""name"": ""用户"",
+      ""modules"": [
+        { ""name"": ""账户登录"", ""functions"": [] },
+        { ""name"": ""查看话费余额"", ""functions"": [] },
+        { ""name"": ""选择充值面额"", ""functions"": [] },
+        { ""name"": ""输入充值手机号"", ""functions"": [] },
+        { ""name"": ""核对充值信息"", ""functions"": [] },
+        { ""name"": ""发起支付"", ""functions"": [] },
+        { ""name"": ""查看充值订单记录"", ""functions"": [] },
+        { ""name"": ""查询充值到账状态"", ""functions"": [] },
+        { ""name"": ""申请充值退款"", ""functions"": [] }
+      ]
+    }
+  ]
+}";
+        }
+
+        private string GetSamplePlantUml()
+        {
+            return
+@"@startuml 话费充值系统用例图
+left to right direction
+actor ""用户"" as User
+rectangle 话费充值系统 {
+    (账户登录)
+    (查看话费余额)
+    (选择充值面额)
+    (输入充值手机号)
+    (核对充值信息)
+    (发起支付)
+    (查看充值订单记录)
+    (查询充值到账状态)
+    (申请充值退款)
+}
+User -- (账户登录)
+User -- (查看话费余额)
+User -- (选择充值面额)
+User -- (输入充值手机号)
+User -- (核对充值信息)
+User -- (发起支付)
+User -- (查看充值订单记录)
+User -- (查询充值到账状态)
+User -- (申请充值退款)
+@enduml";
+        }
+
         private void btnImportJson_Click(object sender, EventArgs e)
         {
             try
@@ -430,13 +503,22 @@ namespace VisioDataMapper
                     return;
                 }
 
-                string jsonText = Clipboard.GetText();
-                ImportJson(jsonText);
+                string inputText = Clipboard.GetText();
+                ImportInput(inputText);
 
                 isInternalTextChange = true;
                 try
                 {
-                    txtJsonInput.Text = jsonText;
+                    if (LooksLikePlantUml(inputText))
+                    {
+                        txtPlantUmlInput.Text = inputText;
+                        tabActors.SelectedTab = tabPlantUml;
+                    }
+                    else
+                    {
+                        txtJsonInput.Text = inputText;
+                        tabActors.SelectedTab = tabJson;
+                    }
                 }
                 finally
                 {
@@ -453,6 +535,31 @@ namespace VisioDataMapper
             }
         }
 
+        private void ImportInput(string input)
+        {
+            string text = (input ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                throw new InvalidOperationException("导入内容不能为空。");
+            }
+
+            if (LooksLikePlantUml(text))
+            {
+                ImportPlantUml(text);
+                return;
+            }
+
+            ImportJson(text);
+        }
+
+        private bool LooksLikePlantUml(string text)
+        {
+            return text.IndexOf("@startuml", StringComparison.OrdinalIgnoreCase) >= 0
+                || Regex.IsMatch(text, @"(?im)^\s*actor\s+")
+                || Regex.IsMatch(text, @"\([^)]+\)\s*(?:as\s+\w+)?")
+                || Regex.IsMatch(text, @"--\s*\(");
+        }
+
         private void ImportJson(string json)
         {
             var serializer = new JavaScriptSerializer();
@@ -465,7 +572,7 @@ namespace VisioDataMapper
             // Remove all tab pages except tabJson
             for (int i = tabActors.TabPages.Count - 1; i >= 0; i--)
             {
-                if (tabActors.TabPages[i] != tabJson)
+                if (tabActors.TabPages[i] != tabJson && tabActors.TabPages[i] != tabPlantUml)
                 {
                     tabActors.TabPages.RemoveAt(i);
                 }
@@ -524,6 +631,182 @@ namespace VisioDataMapper
             }
 
             AppendLog($"已成功导入{txtTitle.Text} {tabActors.TabPages.Count - 1}个参与者 {objectCount}个对象 {relationCount}组关系");
+        }
+
+        private void ImportPlantUml(string uml)
+        {
+            PlantUmlUseCaseModel model = ParsePlantUmlUseCase(uml);
+            if (model.Actors.Count == 0)
+            {
+                model.Actors["Actor"] = "参与者";
+            }
+            if (model.UseCases.Count == 0)
+            {
+                throw new InvalidOperationException("PlantUML中未找到用例。");
+            }
+
+            ClearActorTabs();
+            systemName = string.IsNullOrWhiteSpace(model.SystemName) ? "系统" : model.SystemName;
+            txtTitle.Text = systemName + "用例图";
+
+            Dictionary<string, List<string>> actorUseCases = BuildActorUseCaseMap(model);
+            foreach (KeyValuePair<string, List<string>> pair in actorUseCases)
+            {
+                string actorName = NormalizeName(pair.Key, "参与者");
+                var page = new TabPage(actorName);
+                var grid = CreateActorGrid();
+                page.Controls.Add(grid);
+                tabActors.TabPages.Add(page);
+
+                int index = 1;
+                foreach (string useCase in pair.Value)
+                {
+                    grid.Rows.Add(index++, useCase, string.Empty);
+                }
+            }
+
+            if (tabActors.TabPages.Count > 1)
+            {
+                tabActors.SelectedIndex = 1;
+            }
+
+            AppendLog($"已导入PlantUML用例图：{actorUseCases.Count}个参与者，{model.UseCases.Count}个用例。");
+        }
+
+        private PlantUmlUseCaseModel ParsePlantUmlUseCase(string uml)
+        {
+            var model = new PlantUmlUseCaseModel();
+            var aliasToActor = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var aliasToUseCase = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            string[] lines = uml.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+            foreach (string rawLine in lines)
+            {
+                string line = StripPlantUmlComment(rawLine).Trim();
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                if (line.StartsWith("@", StringComparison.OrdinalIgnoreCase)) continue;
+                if (line.Equals("left to right direction", StringComparison.OrdinalIgnoreCase)) continue;
+                if (line == "{" || line == "}") continue;
+
+                Match rectangle = Regex.Match(line, @"^\s*rectangle\s+""?([^""{]+)""?\s*\{?", RegexOptions.IgnoreCase);
+                if (rectangle.Success)
+                {
+                    model.SystemName = rectangle.Groups[1].Value.Trim();
+                    continue;
+                }
+
+                Match actor = Regex.Match(line, @"^\s*actor\s+""([^""]+)""\s*(?:as\s+([A-Za-z_][\w]*))?", RegexOptions.IgnoreCase);
+                if (!actor.Success)
+                {
+                    actor = Regex.Match(line, @"^\s*actor\s+([^\s]+)\s*(?:as\s+([A-Za-z_][\w]*))?", RegexOptions.IgnoreCase);
+                }
+                if (actor.Success)
+                {
+                    string actorName = actor.Groups[1].Value.Trim();
+                    string alias = actor.Groups[2].Success ? actor.Groups[2].Value.Trim() : actorName;
+                    model.Actors[alias] = actorName;
+                    aliasToActor[alias] = actorName;
+                    continue;
+                }
+
+                Match useCaseAlias = Regex.Match(line, @"\(""([^""]+)""\)\s*(?:as\s+([A-Za-z_][\w]*))?", RegexOptions.IgnoreCase);
+                if (!useCaseAlias.Success)
+                {
+                    useCaseAlias = Regex.Match(line, @"\(([^)]+)\)\s*(?:as\s+([A-Za-z_][\w]*))?", RegexOptions.IgnoreCase);
+                }
+                if (useCaseAlias.Success)
+                {
+                    string useCaseName = useCaseAlias.Groups[1].Value.Trim();
+                    model.UseCases.Add(useCaseName);
+                    if (useCaseAlias.Groups[2].Success)
+                    {
+                        aliasToUseCase[useCaseAlias.Groups[2].Value.Trim()] = useCaseName;
+                    }
+                }
+
+                Match relation = Regex.Match(line, @"^\s*([A-Za-z_][\w]*|""[^""]+"")\s*(?:--|-\S*->|<-\S*-)\s*(\([^)]+\)|[A-Za-z_][\w]*|""[^""]+"")", RegexOptions.IgnoreCase);
+                if (relation.Success)
+                {
+                    string left = ResolvePlantUmlName(relation.Groups[1].Value.Trim(), aliasToActor, aliasToUseCase);
+                    string right = ResolvePlantUmlName(relation.Groups[2].Value.Trim(), aliasToActor, aliasToUseCase);
+                    bool leftIsActor = aliasToActor.Values.Contains(left);
+                    bool rightIsActor = aliasToActor.Values.Contains(right);
+                    string actorName = leftIsActor ? left : (rightIsActor ? right : left);
+                    string useCaseName = actorName == left ? right : left;
+                    if (!string.IsNullOrWhiteSpace(actorName) && !string.IsNullOrWhiteSpace(useCaseName))
+                    {
+                        model.Relations.Add(new PlantUmlUseCaseRelation { Actor = actorName, UseCase = useCaseName });
+                        model.UseCases.Add(useCaseName);
+                    }
+                }
+            }
+
+            return model;
+        }
+
+        private void ClearActorTabs()
+        {
+            for (int i = tabActors.TabPages.Count - 1; i >= 0; i--)
+            {
+                if (tabActors.TabPages[i] != tabJson && tabActors.TabPages[i] != tabPlantUml)
+                {
+                    tabActors.TabPages.RemoveAt(i);
+                }
+            }
+        }
+
+        private string StripPlantUmlComment(string line)
+        {
+            int quoteCount = 0;
+            for (int i = 0; i < line.Length; i++)
+            {
+                if (line[i] == '"') quoteCount++;
+                if (line[i] == '\'' && quoteCount % 2 == 0)
+                {
+                    return line.Substring(0, i);
+                }
+            }
+            return line;
+        }
+
+        private string ResolvePlantUmlName(string token, Dictionary<string, string> actors, Dictionary<string, string> useCases)
+        {
+            string value = token.Trim().Trim('"');
+            if (value.StartsWith("(") && value.EndsWith(")"))
+            {
+                value = value.Substring(1, value.Length - 2).Trim().Trim('"');
+            }
+            if (actors.ContainsKey(value)) return actors[value];
+            if (useCases.ContainsKey(value)) return useCases[value];
+            return value;
+        }
+
+        private Dictionary<string, List<string>> BuildActorUseCaseMap(PlantUmlUseCaseModel model)
+        {
+            var map = new Dictionary<string, List<string>>();
+            foreach (string actor in model.Actors.Values.Distinct())
+            {
+                map[actor] = new List<string>();
+            }
+
+            foreach (PlantUmlUseCaseRelation relation in model.Relations)
+            {
+                string actor = string.IsNullOrWhiteSpace(relation.Actor) ? model.Actors.Values.FirstOrDefault() : relation.Actor;
+                if (string.IsNullOrWhiteSpace(actor)) actor = "参与者";
+                if (!map.ContainsKey(actor)) map[actor] = new List<string>();
+                if (!map[actor].Contains(relation.UseCase)) map[actor].Add(relation.UseCase);
+            }
+
+            if (map.Count == 1 && model.Relations.Count == 0)
+            {
+                string actor = map.Keys.First();
+                foreach (string useCase in model.UseCases)
+                {
+                    if (!map[actor].Contains(useCase)) map[actor].Add(useCase);
+                }
+            }
+
+            return map;
         }
 
         private string NormalizeName(string value, string fallback)
@@ -592,12 +875,36 @@ namespace VisioDataMapper
             }
         }
 
+        private void txtPlantUmlInput_TextChanged(object sender, EventArgs e)
+        {
+            if (isInternalTextChange)
+            {
+                return;
+            }
+
+            string text = txtPlantUmlInput.Text.Trim();
+            if (string.IsNullOrEmpty(text) || !LooksLikePlantUml(text))
+            {
+                return;
+            }
+
+            try
+            {
+                ImportPlantUml(text);
+                RenderDiagram();
+            }
+            catch
+            {
+                // Do not show errors to avoid interrupting user paste/edit
+            }
+        }
+
         private List<UseCaseRelation> ReadRelations()
         {
             var relations = new List<UseCaseRelation>();
             foreach (TabPage page in tabActors.TabPages)
             {
-                if (page == tabJson)
+                if (page == tabJson || page == tabPlantUml)
                 {
                     continue;
                 }
@@ -656,7 +963,7 @@ namespace VisioDataMapper
             var actorSet = new HashSet<string>();
             foreach (TabPage page in tabActors.TabPages)
             {
-                if (page == tabJson)
+                if (page == tabJson || page == tabPlantUml)
                 {
                     continue;
                 }
@@ -1275,6 +1582,20 @@ namespace VisioDataMapper
             public string Target { get; set; }
             public string Relation { get; set; }
             public string Text { get; set; }
+        }
+
+        private class PlantUmlUseCaseModel
+        {
+            public string SystemName { get; set; }
+            public Dictionary<string, string> Actors { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            public HashSet<string> UseCases { get; } = new HashSet<string>();
+            public List<PlantUmlUseCaseRelation> Relations { get; } = new List<PlantUmlUseCaseRelation>();
+        }
+
+        private class PlantUmlUseCaseRelation
+        {
+            public string Actor { get; set; }
+            public string UseCase { get; set; }
         }
 
         private class ShapeAnchor
