@@ -24,7 +24,7 @@ namespace VisioDataMapper
         private Panel pnlTabContainer;
         private TabPage tabJson;
         private TabPage tabPlantUml;
-        private TextBox txtJsonInput;
+        private JsonVisualEditorControl jsonEditor;
         private TextBox txtPlantUmlInput;
         private Panel pnlOptions;
         private ComboBox cmbActorShape;
@@ -168,18 +168,10 @@ namespace VisioDataMapper
             tabJson = new TabPage("JSON数据");
             tabJson.BackColor = Color.White;
             tabJson.Text = "JSON数据";
-            txtJsonInput = new TextBox
-            {
-                Multiline = true,
-                ScrollBars = ScrollBars.Vertical,
-                Dock = DockStyle.Fill,
-                Font = new Font("Consolas", 10F, FontStyle.Regular),
-                Text = GetSampleJson(),
-                BorderStyle = BorderStyle.None,
-                BackColor = Color.White
-            };
-            txtJsonInput.TextChanged += txtJsonInput_TextChanged;
-            tabJson.Controls.Add(txtJsonInput);
+            jsonEditor = new JsonVisualEditorControl();
+            jsonEditor.SetJsonText(GetSampleJson(), true);
+            jsonEditor.JsonTextChanged += jsonEditor_JsonTextChanged;
+            tabJson.Controls.Add(jsonEditor);
             tabActors.TabPages.Add(tabJson);
 
             tabPlantUml = new TabPage("PlantUML");
@@ -516,7 +508,7 @@ User -- (申请充值退款)
                     }
                     else
                     {
-                        txtJsonInput.Text = inputText;
+                        jsonEditor.SetJsonText(inputText, true);
                         tabActors.SelectedTab = tabJson;
                     }
                 }
@@ -585,6 +577,7 @@ User -- (申请充值退款)
             int relationCount = 0;
             foreach (UseCaseActorJson actor in root.actors)
             {
+                if (actor.hidden) continue;
                 string actorName = NormalizeName(actor.name, "参与者");
                 var page = new TabPage(actorName);
                 var grid = CreateActorGrid();
@@ -600,6 +593,7 @@ User -- (申请充值退款)
                 int index = 1;
                 foreach (UseCaseModuleJson module in actor.modules)
                 {
+                    if (module.hidden) continue;
                     string moduleName = NormalizeName(module.name, "模块");
                     objectCount++;
                     relationCount++;
@@ -613,6 +607,7 @@ User -- (申请充值退款)
                     for (int i = 0; i < module.functions.Count; i++)
                     {
                         UseCaseFunctionJson function = module.functions[i];
+                        if (function.hidden) continue;
                         string functionName = NormalizeName(function.name, "功能");
                         objectCount++;
                         relationCount++;
@@ -847,14 +842,14 @@ User -- (申请充值退款)
             AppendLog("用例图生成完成。");
         }
 
-        private void txtJsonInput_TextChanged(object sender, EventArgs e)
+        private void jsonEditor_JsonTextChanged(object sender, EventArgs e)
         {
             if (isInternalTextChange)
             {
                 return;
             }
 
-            string text = txtJsonInput.Text.Trim();
+            string text = jsonEditor.JsonText.Trim();
             if (string.IsNullOrEmpty(text))
             {
                 return;
@@ -866,7 +861,6 @@ User -- (申请充值退款)
                 try
                 {
                     ImportJson(text);
-                    RenderDiagram();
                 }
                 catch
                 {
@@ -891,7 +885,6 @@ User -- (申请充值退款)
             try
             {
                 ImportPlantUml(text);
-                RenderDiagram();
             }
             catch
             {
@@ -1562,18 +1555,21 @@ User -- (申请充值退款)
         private class UseCaseActorJson
         {
             public string name { get; set; }
+            public bool hidden { get; set; }
             public List<UseCaseModuleJson> modules { get; set; }
         }
 
         private class UseCaseModuleJson
         {
             public string name { get; set; }
+            public bool hidden { get; set; }
             public List<UseCaseFunctionJson> functions { get; set; }
         }
 
         private class UseCaseFunctionJson
         {
             public string name { get; set; }
+            public bool hidden { get; set; }
         }
 
         private class UseCaseRelation
