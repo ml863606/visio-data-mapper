@@ -43,6 +43,14 @@ namespace VisioDataMapper
                 }
                 return;
             }
+            if (control.Id == "btnSysArch")
+            {
+                using (var form = new FormSystemArchitectureDiagram())
+                {
+                    form.ShowDialog();
+                }
+                return;
+            }
 
             switch (control.Id)
             {
