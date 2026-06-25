@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Web.Script.Serialization;
 using System.Windows.Forms;
 using Visio = Microsoft.Office.Interop.Visio;
 
@@ -40,6 +41,14 @@ namespace VisioDataMapper
 
         private string currentFontName = "宋体";
         private double currentFontSizePt = 10.5;
+        private readonly DataFlowDiagramLevel diagramLevel;
+
+        public enum DataFlowDiagramLevel
+        {
+            Top,
+            Level1,
+            Level2
+        }
 
         // 默认内置的 Graphviz DOT 示例文本（即用户给出的系统通勤/管理数据）
         private const string DefaultDotSample = @"digraph AdminDFD {
@@ -108,15 +117,59 @@ namespace VisioDataMapper
     P06 -> P04 [label=""图书业务操作记录""];
 }";
 
-        public FormDataFlowDiagram()
+        private const string TopLevelDotSample = @"digraph LibraryTopDFD {
+    rankdir=LR;
+    node [fontname=""SimHei"", fontsize=10];
+    edge [fontname=""SimHei"", fontsize=9];
+
+    User [label=""读者"", shape=box];
+    Admin [label=""管理员"", shape=box];
+    Librarian [label=""图书管理员"", shape=box];
+    Payment [label=""支付平台"", shape=box];
+
+    P0 [label=""P0 图书借阅管理系统"", shape=roundedbox];
+
+    D1 [label=""D1\n用户信息表"", shape=record];
+    D2 [label=""D2\n图书信息表"", shape=record];
+    D3 [label=""D3\n借阅记录表"", shape=record];
+    D4 [label=""D4\n支付记录表"", shape=record];
+
+    User -> P0 [label=""注册登录信息、查询条件、借阅申请""];
+    P0 -> User [label=""图书检索结果、借阅状态、通知信息""];
+
+    Admin -> P0 [label=""系统配置、用户管理指令""];
+    P0 -> Admin [label=""统计报表、系统运行日志""];
+
+    Librarian -> P0 [label=""图书上架、归还确认、库存维护""];
+    P0 -> Librarian [label=""待处理借阅单、库存预警""];
+
+    P0 -> Payment [label=""支付请求""];
+    Payment -> P0 [label=""支付结果""];
+
+    P0 -> D1 [label=""维护用户资料""];
+    D1 -> P0 [label=""用户基础数据""];
+    P0 -> D2 [label=""维护图书资料""];
+    D2 -> P0 [label=""图书库存数据""];
+    P0 -> D3 [label=""写入借阅记录""];
+    D3 -> P0 [label=""历史借阅数据""];
+    P0 -> D4 [label=""写入支付记录""];
+    D4 -> P0 [label=""支付流水数据""];
+}";
+
+        public FormDataFlowDiagram() : this(DataFlowDiagramLevel.Level2)
         {
+        }
+
+        public FormDataFlowDiagram(DataFlowDiagramLevel level)
+        {
+            diagramLevel = level;
             InitializeComponent();
             LoadSampleData();
         }
 
         private void InitializeComponent()
         {
-            this.Text = "智能画图-数据流图";
+            this.Text = "智能画图-" + GetDiagramLevelName();
             this.Size = new Size(920, 750);
             this.MinimumSize = new Size(920, 680);
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -131,7 +184,7 @@ namespace VisioDataMapper
             // 头部提示与按钮
             Label lblTip = new Label
             {
-                Text = "请将您的数据流信息导入到表格，内容格式参考→ 双击此处，查看AI智能画图教程",
+                Text = $"请将您的{GetDiagramLevelName()}信息导入到表格，内容格式参考→ 双击此处，查看AI智能画图教程",
                 Location = new Point(15, 15),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(90, 107, 124),
@@ -197,6 +250,8 @@ namespace VisioDataMapper
 
             dgvData.Columns.Add(new DataGridViewTextBoxColumn { Name = "Next", HeaderText = "下一步", FillWeight = 90 });
             dgvData.Columns.Add(new DataGridViewTextBoxColumn { Name = "LineText", HeaderText = "连接线文字", FillWeight = 160 });
+            dgvData.Columns.Add(new DataGridViewTextBoxColumn { Name = "XPercent", HeaderText = "X(%)", FillWeight = 55 });
+            dgvData.Columns.Add(new DataGridViewTextBoxColumn { Name = "YPercent", HeaderText = "Y(%)", FillWeight = 55 });
 
             // 日志文本框
             txtStatus = new TextBox
@@ -209,7 +264,7 @@ namespace VisioDataMapper
                 BackColor = Color.FromArgb(248, 250, 252),
                 ForeColor = Color.FromArgb(100, 116, 139),
                 BorderStyle = BorderStyle.None,
-                Text = $"{DateTime.Now:HH:mm:ss} 初次启动数据流图。建议通过剪贴板复制 DOT 文本，然后点击“导入表格”自动解析。"
+                Text = $"{DateTime.Now:HH:mm:ss} 初次启动{GetDiagramLevelName()}。建议通过剪贴板复制 DOT 文本，然后点击“导入表格”自动解析。"
             };
 
             // 底部配置面板
@@ -244,8 +299,8 @@ namespace VisioDataMapper
 
             lblLayoutScheme = new Label { Text = "排版方案:", Location = new Point(620, 20), AutoSize = true };
             cmbLayoutScheme = new ComboBox { Location = new Point(690, 16), Size = new Size(160, 25), DropDownStyle = ComboBoxStyle.DropDownList };
-            cmbLayoutScheme.Items.AddRange(new string[] { "方案 A (Visio避让)", "方案 B (拓扑分层布局)", "方案 C (DFD语义分区)" });
-            cmbLayoutScheme.SelectedIndex = 0;
+            cmbLayoutScheme.Items.AddRange(new string[] { "方案 A (Visio避让)", "方案 B (拓扑分层布局)", "方案 C (DFD语义分区)", "方案 E (智能语义拓扑布局)" });
+            cmbLayoutScheme.SelectedIndex = diagramLevel == DataFlowDiagramLevel.Top ? 2 : diagramLevel == DataFlowDiagramLevel.Level2 ? 3 : 0;
 
             lblConnectorStyle = new Label { Text = "连接线:", Location = new Point(15, 65), AutoSize = true };
             cmbConnectorStyle = new ComboBox { Location = new Point(80, 61), Size = new Size(140, 25), DropDownStyle = ComboBoxStyle.DropDownList };
@@ -349,12 +404,30 @@ namespace VisioDataMapper
             this.Close();
         }
 
+        private string GetDiagramLevelName()
+        {
+            switch (diagramLevel)
+            {
+                case DataFlowDiagramLevel.Top:
+                    return "顶层数据流图";
+                case DataFlowDiagramLevel.Level1:
+                    return "1层数据流图";
+                default:
+                    return "2层数据流图";
+            }
+        }
+
+        private string GetDefaultDotSample()
+        {
+            return diagramLevel == DataFlowDiagramLevel.Top ? TopLevelDotSample : DefaultDotSample;
+        }
+
         private void LoadSampleData()
         {
             try
             {
-                ParseAndFillDot(DefaultDotSample);
-                AppendLog("已成功加载内置默认数据流图示例！");
+                ParseAndFillDot(GetDefaultDotSample());
+                AppendLog($"已成功加载内置默认{GetDiagramLevelName()}示例！");
             }
             catch (Exception ex)
             {
@@ -374,7 +447,14 @@ namespace VisioDataMapper
             string text = Clipboard.GetText();
             try
             {
-                ParseAndFillDot(text);
+                if (LooksLikeJson(text))
+                {
+                    ParseAndFillJson(text);
+                }
+                else
+                {
+                    ParseAndFillDot(text);
+                }
                 MessageBox.Show("数据导入并填入表格成功！", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
@@ -385,6 +465,95 @@ namespace VisioDataMapper
         }
 
         // --- DOT 格式解析器核心方法 ---
+        private bool LooksLikeJson(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            string trimmed = text.TrimStart();
+            return trimmed.StartsWith("{") || trimmed.StartsWith("[");
+        }
+
+        private void ParseAndFillJson(string jsonText)
+        {
+            var serializer = new JavaScriptSerializer();
+            var root = serializer.DeserializeObject(jsonText) as Dictionary<string, object>;
+            if (root == null)
+            {
+                throw new InvalidOperationException("JSON 根节点必须是对象。");
+            }
+
+            if (root.ContainsKey("title"))
+            {
+                txtTitle.Text = Convert.ToString(root["title"]);
+            }
+
+            var nodesRaw = root.ContainsKey("nodes") ? root["nodes"] as object[] : null;
+            var edgesRaw = root.ContainsKey("edges") ? root["edges"] as object[] : null;
+            if (nodesRaw == null || nodesRaw.Length == 0)
+            {
+                throw new InvalidOperationException("JSON 中缺少 nodes 节点数组。");
+            }
+
+            var nodeMap = new Dictionary<string, JsonDfdNode>();
+            foreach (var item in nodesRaw)
+            {
+                var dict = item as Dictionary<string, object>;
+                if (dict == null) continue;
+
+                string id = GetJsonString(dict, "id");
+                if (string.IsNullOrWhiteSpace(id)) continue;
+
+                nodeMap[id] = new JsonDfdNode
+                {
+                    Id = id,
+                    Text = GetJsonString(dict, "text", id),
+                    Type = NormalizeDfdType(GetJsonString(dict, "type", GuessTypeFromId(id))),
+                    XPercent = GetJsonNullableDouble(dict, "x"),
+                    YPercent = GetJsonNullableDouble(dict, "y")
+                };
+            }
+
+            var orderedKeys = nodeMap.Keys.ToList();
+            var idToIndexMap = new Dictionary<string, int>();
+            for (int i = 0; i < orderedKeys.Count; i++)
+            {
+                idToIndexMap[orderedKeys[i]] = i + 1;
+            }
+
+            var nextMap = orderedKeys.ToDictionary(k => k, k => new List<string>());
+            var lineTextMap = orderedKeys.ToDictionary(k => k, k => new List<string>());
+            if (edgesRaw != null)
+            {
+                foreach (var item in edgesRaw)
+                {
+                    var dict = item as Dictionary<string, object>;
+                    if (dict == null) continue;
+
+                    string from = GetJsonString(dict, "from");
+                    string to = GetJsonString(dict, "to");
+                    if (!idToIndexMap.ContainsKey(from) || !idToIndexMap.ContainsKey(to)) continue;
+
+                    nextMap[from].Add(idToIndexMap[to].ToString(CultureInfo.InvariantCulture));
+                    lineTextMap[from].Add(GetJsonString(dict, "text"));
+                }
+            }
+
+            dgvData.Rows.Clear();
+            foreach (string key in orderedKeys)
+            {
+                var node = nodeMap[key];
+                dgvData.Rows.Add(
+                    idToIndexMap[key],
+                    node.Text,
+                    node.Type,
+                    string.Join(", ", nextMap[key]),
+                    string.Join(", ", lineTextMap[key]),
+                    FormatPercent(node.XPercent),
+                    FormatPercent(node.YPercent));
+            }
+
+            AppendLog($"已成功导入 JSON 坐标化数据流图数据 {orderedKeys.Count}步");
+        }
+
         private void ParseAndFillDot(string dotText)
         {
             if (string.IsNullOrWhiteSpace(dotText)) return;
@@ -466,7 +635,14 @@ namespace VisioDataMapper
                         shape = shapeMatch.Groups[1].Value;
                     }
 
-                    nodeMap[id] = new DotNode { Id = id, Label = label, Shape = shape };
+                    nodeMap[id] = new DotNode
+                    {
+                        Id = id,
+                        Label = label,
+                        Shape = shape,
+                        XPercent = ExtractDotNumber(attrs, "x"),
+                        YPercent = ExtractDotNumber(attrs, "y")
+                    };
                 }
             }
 
@@ -521,10 +697,70 @@ namespace VisioDataMapper
                 string nextJoined = string.Join(", ", nextMap[nodeKey]);
                 string lineTextJoined = string.Join(", ", lineTextMap[nodeKey]);
 
-                dgvData.Rows.Add(index, node.Label, guessType, nextJoined, lineTextJoined);
+                dgvData.Rows.Add(
+                    index,
+                    node.Label,
+                    guessType,
+                    nextJoined,
+                    lineTextJoined,
+                    FormatPercent(node.XPercent),
+                    FormatPercent(node.YPercent));
             }
 
             AppendLog($"已成功添加数据流图数据 {orderedKeys.Count}步");
+        }
+
+        private string GetJsonString(Dictionary<string, object> dict, string key, string fallback = "")
+        {
+            if (!dict.ContainsKey(key) || dict[key] == null) return fallback;
+            return Convert.ToString(dict[key]);
+        }
+
+        private double? GetJsonNullableDouble(Dictionary<string, object> dict, string key)
+        {
+            if (!dict.ContainsKey(key) || dict[key] == null) return null;
+            if (double.TryParse(Convert.ToString(dict[key]), NumberStyles.Float, CultureInfo.InvariantCulture, out double value))
+            {
+                return ClampPercent(value);
+            }
+            return null;
+        }
+
+        private double? ExtractDotNumber(string attrs, string name)
+        {
+            Match match = Regex.Match(attrs, $@"(?:^|[,;\s]){Regex.Escape(name)}\s*=\s*""?(-?\d+(?:\.\d+)?)""?", RegexOptions.IgnoreCase);
+            if (!match.Success) return null;
+            if (double.TryParse(match.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out double value))
+            {
+                return ClampPercent(value);
+            }
+            return null;
+        }
+
+        private string FormatPercent(double? value)
+        {
+            return value.HasValue ? value.Value.ToString("0.##", CultureInfo.InvariantCulture) : "";
+        }
+
+        private double ClampPercent(double value)
+        {
+            if (value < 0) return 0;
+            if (value > 100) return 100;
+            return value;
+        }
+
+        private string GuessTypeFromId(string id)
+        {
+            string idUpper = (id ?? string.Empty).ToUpperInvariant();
+            if (idUpper.StartsWith("P")) return "加工";
+            if (idUpper.StartsWith("D")) return "数据存储";
+            return "实体";
+        }
+
+        private string NormalizeDfdType(string type)
+        {
+            if (type == "实体" || type == "加工" || type == "数据存储") return type;
+            return "实体";
         }
 
         private class DotNode
@@ -532,6 +768,17 @@ namespace VisioDataMapper
             public string Id { get; set; }
             public string Label { get; set; }
             public string Shape { get; set; }
+            public double? XPercent { get; set; }
+            public double? YPercent { get; set; }
+        }
+
+        private class JsonDfdNode
+        {
+            public string Id { get; set; }
+            public string Text { get; set; }
+            public string Type { get; set; }
+            public double? XPercent { get; set; }
+            public double? YPercent { get; set; }
         }
 
         private class DotEdge
@@ -585,6 +832,8 @@ namespace VisioDataMapper
                 string type = Convert.ToString(row.Cells["ShapeType"].Value) ?? "实体";
                 string nextStr = Convert.ToString(row.Cells["Next"].Value) ?? "";
                 string lineTextStr = Convert.ToString(row.Cells["LineText"].Value) ?? "";
+                double? xPercent = ParsePercentCell(row.Cells["XPercent"].Value);
+                double? yPercent = ParsePercentCell(row.Cells["YPercent"].Value);
 
                 // 解析下一步序号列表
                 var nextIndices = new List<int>();
@@ -617,7 +866,9 @@ namespace VisioDataMapper
                     Text = text,
                     Type = type,
                     NextIndices = nextIndices,
-                    LineTexts = lineTexts
+                    LineTexts = lineTexts,
+                    XPercent = xPercent,
+                    YPercent = yPercent
                 });
             }
 
@@ -628,12 +879,53 @@ namespace VisioDataMapper
 
             // 建立快速索引字典
             var indexToNodeMap = nodeList.ToDictionary(n => n.Index);
+            var edgeList = BuildDfdEdges(nodeList, indexToNodeMap);
 
-            // 如果选择了方案 B 或方案 C，则使用对应的拓扑排版算法提前计算绝对坐标
+            // 如果选择了方案 B/C/E，则使用对应的排版算法提前计算绝对坐标
             Dictionary<int, Tuple<double, double>> sugiyamaCoords = null;
             string selectedScheme = cmbLayoutScheme.SelectedItem?.ToString() ?? "方案 A (Visio避让)";
 
-            if (selectedScheme.Contains("方案 B"))
+            if (selectedScheme.Contains("方案 E"))
+            {
+                try
+                {
+                    var academicEdges = BuildAcademicDfdEdges(nodeList, edgeList);
+                    var layout = new DfdSmartSemanticTopologyLayout();
+                    var layoutNodes = nodeList.Select(n => new DfdSmartSemanticTopologyLayout.LayoutNode
+                    {
+                        Index = n.Index,
+                        Text = n.Text,
+                        Type = n.Type
+                    }).ToList();
+                    var layoutEdges = academicEdges.Select(e => new DfdSmartSemanticTopologyLayout.LayoutEdge
+                    {
+                        From = e.From,
+                        To = e.To
+                    }).ToList();
+
+                    var result = layout.CalculateLayout(layoutNodes, layoutEdges, pageWidth, pageHeight, horSpacingInch, verSpacingInch);
+                    sugiyamaCoords = result.Coordinates;
+                    pageWidth = result.PageWidth;
+                    pageHeight = result.PageHeight;
+                    activePage.PageSheet.CellsU["PageWidth"].FormulaU = $"{pageWidth.ToString(CultureInfo.InvariantCulture)} in";
+                    activePage.PageSheet.CellsU["PageHeight"].FormulaU = $"{pageHeight.ToString(CultureInfo.InvariantCulture)} in";
+                    foreach (var warning in result.Warnings)
+                    {
+                        AppendLog("[建议] " + warning);
+                    }
+                    int hiddenEdgeCount = edgeList.Count - academicEdges.Count;
+                    if (hiddenEdgeCount > 0)
+                    {
+                        AppendLog($"[学术版] 已隐藏 {hiddenEdgeCount} 条日志/记录类辅助长线，避免主图过度交叉。");
+                    }
+                    ApplyAcademicEdgesToNodes(nodeList, academicEdges);
+                }
+                catch (Exception ex)
+                {
+                    AppendLog($"[警告] 方案 E 布局计算异常，已退回到简易网格: {ex.Message}");
+                }
+            }
+            else if (selectedScheme.Contains("方案 B"))
             {
                 try
                 {
@@ -747,6 +1039,8 @@ namespace VisioDataMapper
                 }
                 catch { }
             }
+
+            ApplyCoordinateOverrides(nodeList, ref sugiyamaCoords, pageWidth, pageHeight);
 
             // 2. 在画布上安置并绘制各节点
             int columns = (int)Math.Ceiling(Math.Sqrt(nodeList.Count));
@@ -873,9 +1167,16 @@ namespace VisioDataMapper
                     }
                     else
                     {
-                        // 默认“绑定形状”：胶连到图形的 PinX (Shape-to-Shape)，Visio 会自动寻找边缘最短路径
-                        connector.CellsU["BeginX"].GlueTo(node.VisioShape.CellsU["PinX"]);
-                        connector.CellsU["EndX"].GlueTo(targetNode.VisioShape.CellsU["PinX"]);
+                        if (selectedScheme.Contains("方案 E"))
+                        {
+                            GlueConnectorToAcademicSides(connector, node.VisioShape, targetNode.VisioShape);
+                        }
+                        else
+                        {
+                            // 默认“绑定形状”：胶连到图形的 PinX (Shape-to-Shape)，Visio 会自动寻找边缘最短路径
+                            connector.CellsU["BeginX"].GlueTo(node.VisioShape.CellsU["PinX"]);
+                            connector.CellsU["EndX"].GlueTo(targetNode.VisioShape.CellsU["PinX"]);
+                        }
                     }
                 }
             }
@@ -885,8 +1186,8 @@ namespace VisioDataMapper
             {
                 Visio.Shape pageSheet = activePage.PageSheet;
                 pageSheet.CellsU["RouteStyle"].Formula = "5"; // 正交折线路由
-                pageSheet.CellsU["LineToNodeGap"].FormulaU = "0.20 in";   // 连线距节点的避让安全空隙
-                pageSheet.CellsU["LineToLineGap"].FormulaU = "0.15 in";   // 折线重合避让空隙，使多根线分离
+                pageSheet.CellsU["LineToNodeGap"].FormulaU = selectedScheme.Contains("方案 E") ? "0.36 in" : "0.20 in";
+                pageSheet.CellsU["LineToLineGap"].FormulaU = selectedScheme.Contains("方案 E") ? "0.24 in" : "0.15 in";
 
                 if (selectedScheme.Contains("方案 A"))
                 {
@@ -896,8 +1197,10 @@ namespace VisioDataMapper
                 }
                 else
                 {
-                    // 方案 B / 方案 C 禁用 PlaceStyle 排版（防止 Visio 复盖我们的拓扑算法精准坐标）
+                    // 方案 B / C / E 禁用 PlaceStyle 排版（防止 Visio 覆盖我们的精准坐标）
                     pageSheet.CellsU["PlaceStyle"].Formula = "0";
+                    pageSheet.CellsU["AvenueSizeX"].FormulaU = selectedScheme.Contains("方案 E") ? "2.8 in" : "2.0 in";
+                    pageSheet.CellsU["AvenueSizeY"].FormulaU = selectedScheme.Contains("方案 E") ? "2.4 in" : "2.0 in";
                 }
             }
             catch { }
@@ -906,21 +1209,436 @@ namespace VisioDataMapper
             if (selectedScheme.Contains("方案 A"))
             {
                 activePage.Layout();
-                AppendLog("生成数据流图绘图成功！已应用方案 A 避让优化。");
+                AppendLog($"生成{GetDiagramLevelName()}绘图成功！已应用方案 A 避让优化。");
             }
             else if (selectedScheme.Contains("方案 B"))
             {
-                AppendLog("生成数据流图绘图成功！已应用方案 B (Sugiyama 拓扑分层) 布局算法。");
+                AppendLog($"生成{GetDiagramLevelName()}绘图成功！已应用方案 B (Sugiyama 拓扑分层) 布局算法。");
+            }
+            else if (selectedScheme.Contains("方案 E"))
+            {
+                AppendLog($"生成{GetDiagramLevelName()}绘图成功！已应用方案 E (智能语义拓扑布局)。");
             }
             else
             {
-                AppendLog("生成数据流图绘图成功！已应用方案 C (DFD 语义分区) 布局算法。");
+                AppendLog($"生成{GetDiagramLevelName()}绘图成功！已应用方案 C (DFD 语义分区) 布局算法。");
             }
 
-            MessageBox.Show("数据流图生成成功！已完成避让与正交连线布局。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show($"{GetDiagramLevelName()}生成成功！已完成避让与正交连线布局。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Close();
         }
 
         // --- 高级特殊 DFD 样式组装助手 ---
+
+        private List<DfdOrthogonalChannelLayout.LayoutEdge> BuildDfdEdges(List<DFDNode> nodeList, Dictionary<int, DFDNode> indexToNodeMap)
+        {
+            var edges = new List<DfdOrthogonalChannelLayout.LayoutEdge>();
+            foreach (var node in nodeList)
+            {
+                for (int i = 0; i < node.NextIndices.Count; i++)
+                {
+                    int targetIndex = node.NextIndices[i];
+                    if (!indexToNodeMap.ContainsKey(targetIndex))
+                    {
+                        continue;
+                    }
+
+                    edges.Add(new DfdOrthogonalChannelLayout.LayoutEdge
+                    {
+                        From = node.Index,
+                        To = targetIndex,
+                        Text = i < node.LineTexts.Count ? node.LineTexts[i] : ""
+                    });
+                }
+            }
+
+            return edges;
+        }
+
+        private double? ParsePercentCell(object value)
+        {
+            if (value == null) return null;
+            string text = Convert.ToString(value)?.Trim();
+            if (string.IsNullOrWhiteSpace(text)) return null;
+            text = text.Replace("%", "");
+
+            if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed) ||
+                double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out parsed))
+            {
+                return ClampPercent(parsed);
+            }
+
+            return null;
+        }
+
+        private void ApplyCoordinateOverrides(
+            List<DFDNode> nodeList,
+            ref Dictionary<int, Tuple<double, double>> coordinates,
+            double pageWidth,
+            double pageHeight)
+        {
+            var coordinateNodes = nodeList
+                .Where(n => n.XPercent.HasValue && n.YPercent.HasValue)
+                .ToList();
+            if (coordinateNodes.Count == 0)
+            {
+                return;
+            }
+
+            if (coordinates == null)
+            {
+                coordinates = new Dictionary<int, Tuple<double, double>>();
+            }
+
+            foreach (var node in coordinateNodes)
+            {
+                double x = pageWidth * node.XPercent.Value / 100.0;
+                double y = pageHeight * (100.0 - node.YPercent.Value) / 100.0;
+                coordinates[node.Index] = Tuple.Create(x, y);
+            }
+
+            AppendLog($"已应用 {coordinateNodes.Count} 个 AI/表格坐标节点。");
+        }
+
+        private List<DfdOrthogonalChannelLayout.LayoutEdge> BuildAcademicDfdEdges(
+            List<DFDNode> nodeList,
+            List<DfdOrthogonalChannelLayout.LayoutEdge> allEdges)
+        {
+            var nodeMap = nodeList.ToDictionary(n => n.Index);
+            var kept = allEdges
+                .Where(e => ShouldKeepAcademicEdge(e, nodeMap))
+                .ToList();
+
+            return kept.Count == 0 ? allEdges : kept;
+        }
+
+        private bool ShouldKeepAcademicEdge(DfdOrthogonalChannelLayout.LayoutEdge edge, Dictionary<int, DFDNode> nodeMap)
+        {
+            if (!nodeMap.ContainsKey(edge.From) || !nodeMap.ContainsKey(edge.To))
+            {
+                return false;
+            }
+
+            var from = nodeMap[edge.From];
+            var to = nodeMap[edge.To];
+            if (IsLogLikeEdge(edge.Text) && !IsLogLikeNode(from) && IsLogLikeNode(to))
+            {
+                return false;
+            }
+
+            if (from.Type == "加工" && to.Type == "加工" && IsLogLikeNode(to) && !IsLogLikeNode(from))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool IsLogLikeNode(DFDNode node)
+        {
+            string text = (node.Text ?? string.Empty).Replace("\n", "");
+            return text.Contains("日志") || text.Contains("记录") || text.Contains("审计");
+        }
+
+        private bool IsLogLikeEdge(string text)
+        {
+            string value = text ?? string.Empty;
+            return value.Contains("日志") || value.Contains("操作记录") || value.Contains("历史记录") || value.Contains("记录");
+        }
+
+        private void ApplyAcademicEdgesToNodes(List<DFDNode> nodeList, List<DfdOrthogonalChannelLayout.LayoutEdge> edges)
+        {
+            var outgoing = edges
+                .GroupBy(e => e.From)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            foreach (var node in nodeList)
+            {
+                if (!outgoing.ContainsKey(node.Index))
+                {
+                    node.NextIndices = new List<int>();
+                    node.LineTexts = new List<string>();
+                    continue;
+                }
+
+                node.NextIndices = outgoing[node.Index].Select(e => e.To).ToList();
+                node.LineTexts = outgoing[node.Index].Select(e => e.Text ?? string.Empty).ToList();
+            }
+        }
+
+        private void GlueConnectorToAcademicSides(Visio.Shape connector, Visio.Shape fromShape, Visio.Shape toShape)
+        {
+            double fromX = fromShape.CellsU["PinX"].ResultIU;
+            double fromY = fromShape.CellsU["PinY"].ResultIU;
+            double toX = toShape.CellsU["PinX"].ResultIU;
+            double toY = toShape.CellsU["PinY"].ResultIU;
+
+            string beginCell = Math.Abs(toX - fromX) >= Math.Abs(toY - fromY)
+                ? (toX >= fromX ? "Connections.X3" : "Connections.X4")
+                : (toY >= fromY ? "Connections.X2" : "Connections.X1");
+            string endCell = Math.Abs(toX - fromX) >= Math.Abs(toY - fromY)
+                ? (toX >= fromX ? "Connections.X4" : "Connections.X3")
+                : (toY >= fromY ? "Connections.X1" : "Connections.X2");
+
+            EnsureAcademicConnectionPoints(fromShape);
+            EnsureAcademicConnectionPoints(toShape);
+            connector.CellsU["BeginX"].GlueTo(fromShape.CellsU[beginCell]);
+            connector.CellsU["EndX"].GlueTo(toShape.CellsU[endCell]);
+        }
+
+        private void EnsureAcademicConnectionPoints(Visio.Shape shape)
+        {
+            try
+            {
+                if (shape.SectionExists[(short)Visio.VisSectionIndices.visSectionConnectionPts, 0] == 0 ||
+                    shape.RowCount[(short)Visio.VisSectionIndices.visSectionConnectionPts] < 4)
+                {
+                    SetConnectionPoint(shape, 0, "Width*0.5", "0");
+                    SetConnectionPoint(shape, 1, "Width*0.5", "Height");
+                    SetConnectionPoint(shape, 2, "Width", "Height*0.5");
+                    SetConnectionPoint(shape, 3, "0", "Height*0.5");
+                }
+            }
+            catch { }
+        }
+
+        private void SetConnectionPoint(Visio.Shape shape, short row, string xFormula, string yFormula)
+        {
+            while (shape.RowCount[(short)Visio.VisSectionIndices.visSectionConnectionPts] <= row)
+            {
+                shape.AddRow(
+                    (short)Visio.VisSectionIndices.visSectionConnectionPts,
+                    (short)Visio.VisRowIndices.visRowLast,
+                    (short)Visio.VisRowTags.visTagCnnctPt);
+            }
+
+            shape.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, row, (short)Visio.VisCellIndices.visCnnctX].FormulaU = xFormula;
+            shape.CellsSRC[(short)Visio.VisSectionIndices.visSectionConnectionPts, row, (short)Visio.VisCellIndices.visCnnctY].FormulaU = yFormula;
+        }
+
+        private void RenderOrthogonalChannelDataFlow(
+            Visio.Page page,
+            List<DFDNode> nodeList,
+            List<DfdOrthogonalChannelLayout.LayoutEdge> edgeList,
+            double pageWidth,
+            double pageHeight,
+            double horSpacingInch,
+            double verSpacingInch)
+        {
+            var layout = new DfdOrthogonalChannelLayout();
+            var layoutNodes = nodeList.Select(n => new DfdOrthogonalChannelLayout.LayoutNode
+            {
+                Index = n.Index,
+                Text = n.Text,
+                Type = n.Type
+            }).ToList();
+
+            var result = layout.CalculateLayout(layoutNodes, edgeList, pageWidth, pageHeight, horSpacingInch, verSpacingInch);
+            page.PageSheet.CellsU["PageWidth"].FormulaU = $"{result.PageWidth.ToString(CultureInfo.InvariantCulture)} in";
+            page.PageSheet.CellsU["PageHeight"].FormulaU = $"{result.PageHeight.ToString(CultureInfo.InvariantCulture)} in";
+
+            DrawDfdNodesAtLayout(page, nodeList, result.Nodes);
+            DrawOrthogonalRoutedEdges(page, result.Edges);
+            CreateOrthogonalSubDiagramPages(page.Application, nodeList, edgeList, result.SubDiagrams, horSpacingInch, verSpacingInch);
+        }
+
+        private void DrawDfdNodesAtLayout(Visio.Page page, List<DFDNode> nodeList, Dictionary<int, DfdOrthogonalChannelLayout.LayoutPoint> coordinates)
+        {
+            foreach (var node in nodeList)
+            {
+                if (!coordinates.ContainsKey(node.Index))
+                {
+                    continue;
+                }
+
+                var point = coordinates[node.Index];
+                node.VisioShape = DrawDfdNodeShape(page, node, point.X, point.Y);
+            }
+        }
+
+        private Visio.Shape DrawDfdNodeShape(Visio.Page page, DFDNode node, double x, double y)
+        {
+            double w = 1.2;
+            double h = 0.8;
+
+            if (node.Type == "加工")
+            {
+                string procStyle = cmbProcessStyle.SelectedItem?.ToString() ?? "正方形-带标";
+                if (procStyle == "圆角矩形")
+                {
+                    Visio.Shape shape = page.DrawRectangle(x - w / 2, y - h / 2, x + w / 2, y + h / 2);
+                    shape.Text = node.Text;
+                    ApplyAcademicShapeStyle(shape);
+                    TrySetFormula(shape, "Roundness", "0.18");
+                    return shape;
+                }
+
+                return DrawProcessWithHeader(page, node.Text, x, y, 1.0, 1.0);
+            }
+
+            if (node.Type == "数据存储")
+            {
+                string storeStyle = cmbStoreStyle.SelectedItem?.ToString() ?? "小正方形+两横线";
+                return storeStyle == "三边矩形(右开口)"
+                    ? DrawOpenRectangle(page, node.Text, x, y, w, h)
+                    : DrawDoubleLineStore(page, node.Text, x, y, w, h);
+            }
+
+            Visio.Shape entity = page.DrawRectangle(x - w / 2, y - h / 2, x + w / 2, y + h / 2);
+            entity.Text = node.Text;
+            ApplyAcademicShapeStyle(entity);
+            return entity;
+        }
+
+        private void DrawOrthogonalRoutedEdges(Visio.Page page, List<DfdOrthogonalChannelLayout.RoutedEdge> edges)
+        {
+            foreach (var edge in edges)
+            {
+                var pieces = new List<Visio.Shape>();
+                for (int i = 0; i < edge.Points.Count - 1; i++)
+                {
+                    var a = edge.Points[i];
+                    var b = edge.Points[i + 1];
+                    Visio.Shape segment = page.DrawLine(a.X, a.Y, b.X, b.Y);
+                    segment.CellsU["LineColor"].Formula = "RGB(0, 0, 0)";
+                    segment.CellsU["LineWeight"].Formula = "0.75pt";
+                    segment.CellsU["BeginArrow"].Formula = "0";
+                    segment.CellsU["EndArrow"].Formula = i == edge.Points.Count - 2 ? "4" : "0";
+                    pieces.Add(segment);
+                }
+
+                if (!string.IsNullOrWhiteSpace(edge.Text))
+                {
+                    var labelPoint = edge.LabelPoint ?? edge.Points[Math.Max(0, edge.Points.Count / 2)];
+                    Visio.Shape label = page.DrawRectangle(labelPoint.X - 0.55, labelPoint.Y - 0.12, labelPoint.X + 0.55, labelPoint.Y + 0.12);
+                    label.Text = edge.Text;
+                    label.CellsU["LinePattern"].Formula = "0";
+                    label.CellsU["FillPattern"].Formula = "0";
+                    label.CellsU["Char.Font"].FormulaU = $"\"{currentFontName}\"";
+                    label.CellsU["Char.Size"].FormulaU = "8.5pt";
+                    label.CellsU["Char.Color"].Formula = "RGB(0, 0, 0)";
+                    label.CellsU["Para.HorzAlign"].Formula = "1";
+                    label.CellsU["VerticalAlign"].Formula = "1";
+                    pieces.Add(label);
+                }
+
+                if (pieces.Count > 1)
+                {
+                    try
+                    {
+                        GroupShapes(page, pieces);
+                    }
+                    catch
+                    {
+                        // 分组失败不影响图形内容，线段和文字仍然保留。
+                    }
+                }
+            }
+        }
+
+        private void CreateOrthogonalSubDiagramPages(
+            Visio.Application app,
+            List<DFDNode> allNodes,
+            List<DfdOrthogonalChannelLayout.LayoutEdge> allEdges,
+            List<DfdOrthogonalChannelLayout.SubDiagramPlan> subDiagrams,
+            double horSpacingInch,
+            double verSpacingInch)
+        {
+            if (subDiagrams == null || subDiagrams.Count == 0)
+            {
+                return;
+            }
+
+            var nodeMap = allNodes.ToDictionary(n => n.Index);
+            foreach (var plan in subDiagrams)
+            {
+                if (!nodeMap.ContainsKey(plan.FocusNodeIndex))
+                {
+                    continue;
+                }
+
+                var localEdges = allEdges.Where(e => e.From == plan.FocusNodeIndex || e.To == plan.FocusNodeIndex).ToList();
+                var localIds = new HashSet<int>(localEdges.SelectMany(e => new[] { e.From, e.To }));
+                var localNodes = allNodes
+                    .Where(n => localIds.Contains(n.Index))
+                    .Select(CloneDfdNode)
+                    .ToList();
+
+                if (localNodes.Count <= 1)
+                {
+                    continue;
+                }
+
+                Visio.Page page = app.ActiveDocument.Pages.Add();
+                try
+                {
+                    page.Name = EnsureUniquePageName(app.ActiveDocument, plan.PageName);
+                }
+                catch { }
+
+                var layout = new DfdOrthogonalChannelLayout();
+                var layoutNodes = localNodes.Select(n => new DfdOrthogonalChannelLayout.LayoutNode
+                {
+                    Index = n.Index,
+                    Text = n.Text,
+                    Type = n.Type
+                }).ToList();
+
+                var result = layout.CalculateLayout(layoutNodes, localEdges, 11.0, 8.5, horSpacingInch, verSpacingInch);
+                page.PageSheet.CellsU["PageWidth"].FormulaU = $"{result.PageWidth.ToString(CultureInfo.InvariantCulture)} in";
+                page.PageSheet.CellsU["PageHeight"].FormulaU = $"{result.PageHeight.ToString(CultureInfo.InvariantCulture)} in";
+                DrawDfdNodesAtLayout(page, localNodes, result.Nodes);
+                DrawOrthogonalRoutedEdges(page, result.Edges);
+            }
+        }
+
+        private DFDNode CloneDfdNode(DFDNode node)
+        {
+            return new DFDNode
+            {
+                Index = node.Index,
+                Text = node.Text,
+                Type = node.Type,
+                NextIndices = new List<int>(node.NextIndices),
+                LineTexts = new List<string>(node.LineTexts),
+                XPercent = node.XPercent,
+                YPercent = node.YPercent
+            };
+        }
+
+        private string EnsureUniquePageName(Visio.Document document, string baseName)
+        {
+            string safeName = string.IsNullOrWhiteSpace(baseName) ? "2层数据流图-局部图" : baseName;
+            if (safeName.Length > 31)
+            {
+                safeName = safeName.Substring(0, 31);
+            }
+
+            var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 1; i <= document.Pages.Count; i++)
+            {
+                existing.Add(document.Pages[i].Name);
+            }
+
+            if (!existing.Contains(safeName))
+            {
+                return safeName;
+            }
+
+            for (int i = 2; i < 100; i++)
+            {
+                string suffix = "-" + i.ToString(CultureInfo.InvariantCulture);
+                string candidate = safeName.Length + suffix.Length > 31
+                    ? safeName.Substring(0, 31 - suffix.Length) + suffix
+                    : safeName + suffix;
+                if (!existing.Contains(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            return safeName;
+        }
 
         private Visio.Shape GroupShapes(Visio.Page page, List<Visio.Shape> shapes)
         {
@@ -1081,6 +1799,8 @@ namespace VisioDataMapper
             public string Type { get; set; } // 实体, 加工, 数据存储
             public List<int> NextIndices { get; set; } = new List<int>();
             public List<string> LineTexts { get; set; } = new List<string>();
+            public double? XPercent { get; set; }
+            public double? YPercent { get; set; }
             public Visio.Shape VisioShape { get; set; }
         }
     }

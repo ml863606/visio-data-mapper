@@ -3,109 +3,23 @@
   <ribbon>
     <tabs>
       <tab id="tabVisioDataMapper" label="Visio画图小助手">
-        <!-- 1. 会员信息 -->
-        <group id="groupMemberInfo" label="会员信息">
-          <button id="btnMemberManage" label="会员管理" showImage="true" imageMso="Permission" size="large" onAction="OnAction" />
-          <box id="boxMemberCol1" boxStyle="vertical">
-            <menu id="menuSmartDrawTutorial" label="智能画图教程" showImage="true" imageMso="Help" size="normal">
-              <button id="btnTutorial1" label="基础教程" showImage="true" imageMso="Help" onAction="OnAction" />
-              <button id="btnTutorial2" label="进阶教程" showImage="true" imageMso="Play" onAction="OnAction" />
-            </menu>
-            <menu id="menuCustomTemplates" label="自定义套模板" showImage="true" imageMso="DocumentTemplate" size="normal">
-              <button id="btnTemplate1" label="模板管理" showImage="true" imageMso="DocumentTemplate" onAction="OnAction" />
-              <button id="btnTemplate2" label="新建模板" showImage="true" imageMso="NewPage" onAction="OnAction" />
-            </menu>
-            <button id="btnBindDocData" label="文档绑定数据" showImage="true" imageMso="DatabaseInsert" size="normal" onAction="OnAction" />
-          </box>
-          <box id="boxMemberCol2" boxStyle="vertical">
-            <button id="btnCustomShapes" label="自定义形状" showImage="true" imageMso="ShapesMoreShapes" size="normal" onAction="OnAction" />
-            <button id="btnExportChartToTable" label="绘图导出表格" showImage="true" imageMso="ExportExcel" size="normal" onAction="OnAction" />
-          </box>
-        </group>
-
-        <!-- 2. 流程图 -->
         <group id="groupFlowchart" label="流程图">
-          <box id="boxFlowCol1" boxStyle="vertical">
-            <button id="btnBasicFlowchart" label="基本流程图" showImage="true" imageMso="DiagramProcess" size="normal" onAction="OnAction" />
-            <button id="btnSwimlane" label="泳道图" showImage="true" imageMso="TableColumns" size="normal" onAction="OnAction" />
-            <menu id="menuSwimlaneEdit" label="泳道图编辑" showImage="true" imageMso="TableRowsDelete" size="normal">
-              <button id="btnSwimlaneAdd" label="添加泳道" showImage="true" imageMso="TableInsertRowsAbove" onAction="OnAction" />
-              <button id="btnSwimlaneDel" label="删除泳道" showImage="true" imageMso="TableDeleteRows" onAction="OnAction" />
-            </menu>
-          </box>
-          <box id="boxFlowCol2" boxStyle="vertical">
-            <button id="btnTechRoadmap" label="技术路线图" showImage="true" imageMso="ProcessStatus" size="normal" onAction="OnAction" />
-            <button id="btnChemFlowchart" label="化工流程图" showImage="true" imageMso="ObjectsGroup" size="normal" onAction="OnAction" />
-            <button id="btnNSChart" label="NS盒图" showImage="true" imageMso="TableGrid" size="normal" onAction="OnAction" />
-          </box>
+          <button id="btnBasicFlowchart" label="基本流程图" showImage="true" imageMso="DiagramProcess" size="large" onAction="OnAction" />
         </group>
-
-        <!-- 3. 架构图 -->
         <group id="groupArchitecture" label="架构图">
-          <box id="boxArchCol1" boxStyle="vertical">
-            <button id="btnOrgChart" label="组织架构图" showImage="true" imageMso="DiagramOrgChart" size="normal" onAction="OnAction" />
-            <button id="btnLayeredArch" label="层级架构图" showImage="true" imageMso="DiagramPyramid" size="normal" onAction="OnAction" />
-            <button id="btnEquityArch" label="股权架构图" showImage="true" imageMso="GroupList" size="normal" onAction="OnAction" />
-          </box>
-          <box id="boxArchCol2" boxStyle="vertical">
-            <button id="btnSysArch" label="系统架构图" showImage="true" imageMso="ServerConnection" size="normal" onAction="OnAction" />
-            <button id="btnMatrixArch" label="矩阵架构图" showImage="true" imageMso="DiagramMatrix" size="normal" onAction="OnAction" />
-            <button id="btnFamilyTree" label="家谱图" showImage="true" imageMso="Relationships" size="normal" onAction="OnAction" />
-          </box>
-          <box id="boxArchCol3" boxStyle="vertical">
-            <button id="btnModuleDiagram" label="功能模块图" showImage="true" imageMso="TraceDependents" size="normal" onAction="OnAction" />
-          </box>
+          <button id="btnOrgChart" label="组织架构图" showImage="true" imageMso="DiagramOrgChart" size="normal" onAction="OnAction" />
+          <button id="btnSysArch" label="系统架构图" showImage="true" imageMso="ServerConnection" size="normal" onAction="OnAction" />
+          <button id="btnModuleDiagram" label="功能模块图" showImage="true" imageMso="TraceDependents" size="normal" onAction="OnAction" />
         </group>
-
-        <!-- 4. 软件与数据库 -->
         <group id="groupSoftwareDatabase" label="软件与数据库">
-          <box id="boxSoftCol1" boxStyle="vertical">
-            <button id="btnFuncStructure" label="功能结构图" showImage="true" imageMso="TraceDependents" size="normal" onAction="OnAction" />
-            <button id="btnClassDiagram" label="类图" showImage="true" imageMso="GroupOutline" size="normal" onAction="OnAction" />
-            <menu id="menuERDiagram" label="ER图" showImage="true" imageMso="DatabaseRelationships" size="normal">
-              <button id="btnEntityAttribute" label="实体属性图" showImage="true" imageMso="TableProperties" onAction="OnAction" />
-              <button id="btnERLogical" label="逻辑模型" showImage="true" imageMso="AdpPrimaryKey" onAction="OnAction" />
-              <button id="btnERPhysical" label="物理模型" showImage="true" imageMso="FileNewDatabase" onAction="OnAction" />
-            </menu>
-          </box>
-          <box id="boxSoftCol2" boxStyle="vertical">
-            <button id="btnUseCaseDiagram" label="用例图" showImage="true" imageMso="ResourceAssignment" size="normal" onAction="OnAction" />
-            <menu id="menuSeqDiagram" label="时序图" showImage="true" imageMso="ScheduleView" size="normal">
-              <button id="btnSeqNormal" label="标准时序图" showImage="true" imageMso="DiagramProcess" onAction="OnAction" />
-              <button id="btnSeqLoop" label="循环时序图" showImage="true" imageMso="DiagramCycle" onAction="OnAction" />
-            </menu>
-            <button id="btnActivityDiagram" label="活动图" showImage="true" imageMso="DiagramCycle" size="normal" onAction="OnAction" />
-          </box>
-          <box id="boxSoftCol3" boxStyle="vertical">
-            <button id="btnStateDiagram" label="状态图" showImage="true" imageMso="ProcessStatus" size="normal" onAction="OnAction" />
-            <button id="btnDataFlow" label="数据流图" showImage="true" imageMso="DataGraphicEdit" size="normal" onAction="OnAction" />
-            <menu id="menuMoreUML" label="更多UML绘图" showImage="true" imageMso="MoreControls" size="normal">
-              <button id="btnUMLDeployment" label="部署图" showImage="true" imageMso="ServerConnection" onAction="OnAction" />
-              <button id="btnUMLComponent" label="组件图" showImage="true" imageMso="ControlLayoutStacked" onAction="OnAction" />
-            </menu>
-          </box>
-        </group>
-
-        <!-- 5. 项目管理 -->
-        <group id="groupProjectManagement" label="项目管理">
-          <box id="boxProjCol1" boxStyle="vertical">
-            <button id="btnMindmap" label="思维导图" showImage="true" imageMso="DiagramRadial" size="normal" onAction="OnAction" />
-            <button id="btnDecisionTree" label="决策树图" showImage="true" imageMso="OrganizationChart" size="normal" onAction="OnAction" />
-            <button id="btnFishbone" label="鱼骨图" showImage="true" imageMso="GroupDrawing" size="normal" onAction="OnAction" />
-          </box>
-          <box id="boxProjCol2" boxStyle="vertical">
-            <button id="btnGantt" label="甘特图" showImage="true" imageMso="Calendar" size="normal" onAction="OnAction" />
-            <button id="btnTimeline" label="时间轴" showImage="true" imageMso="Timeline" size="normal" onAction="OnAction" />
-            <menu id="menuMoreDrawings" label="更多绘图" showImage="true" imageMso="DrawingCanvas" size="normal">
-              <button id="btnDrawValueStream" label="价值流图" showImage="true" imageMso="DiagramTarget" onAction="OnAction" />
-              <button id="btnDrawBPMN" label="BPMN图" showImage="true" imageMso="DiagramProcess" onAction="OnAction" />
-            </menu>
-          </box>
-        </group>
-
-        <!-- 6. 其他绘图 -->
-        <group id="groupOtherDrawings" label="其他绘图">
-          <button id="btnNetworkTopology" label="网络拓扑图" showImage="true" imageMso="Globe" size="large" onAction="OnAction" />
+          <button id="btnEntityAttribute" label="实体属性图" showImage="true" imageMso="TableProperties" size="normal" onAction="OnAction" />
+          <button id="btnUseCaseDiagram" label="用例图" showImage="true" imageMso="HappyFace" size="normal" onAction="OnAction" />
+          <button id="btnSeqNormal" label="时序图" showImage="true" imageMso="DiagramProcess" size="normal" onAction="OnAction" />
+          <menu id="menuDataFlow" label="数据流图" showImage="true" imageMso="DataGraphicEdit" size="normal">
+            <button id="btnDataFlowTop" label="顶层数据流图" showImage="true" imageMso="DataGraphicEdit" onAction="OnAction" />
+            <button id="btnDataFlowLevel1" label="1层数据流图" showImage="true" imageMso="DiagramProcess" onAction="OnAction" />
+            <button id="btnDataFlowLevel2" label="2层数据流图" showImage="true" imageMso="DiagramTarget" onAction="OnAction" />
+          </menu>
         </group>
       </tab>
     </tabs>
