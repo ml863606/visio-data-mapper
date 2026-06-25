@@ -1402,7 +1402,7 @@ namespace VisioDataMapper
             public JsonNodePromptDialog(string title, bool requireName)
             {
                 Text = title;
-                Size = new Size(360, requireName ? 205 : 165);
+                ClientSize = new Size(360, requireName ? 190 : 150);
                 StartPosition = FormStartPosition.CenterParent;
                 FormBorderStyle = FormBorderStyle.FixedDialog;
                 MaximizeBox = false;
@@ -1413,12 +1413,20 @@ namespace VisioDataMapper
                 {
                     Dock = DockStyle.Fill,
                     ColumnCount = 1,
-                    Padding = new Padding(14),
+                    RowCount = requireName ? 4 : 2,
+                    Padding = new Padding(14, 14, 14, 6),
                     BackColor = Color.White
                 };
+                if (requireName)
+                {
+                    layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+                    layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+                }
+                layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+                layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
 
-                txtName = new TextBox { Dock = DockStyle.Top, Enabled = requireName };
-                txtValue = new TextBox { Dock = DockStyle.Top };
+                txtName = new TextBox { Dock = DockStyle.Fill, Enabled = requireName };
+                txtValue = new TextBox { Dock = DockStyle.Fill };
 
                 if (requireName)
                 {
@@ -1432,18 +1440,19 @@ namespace VisioDataMapper
                 {
                     Dock = DockStyle.Bottom,
                     FlowDirection = FlowDirection.RightToLeft,
-                    Height = 38,
-                    Padding = new Padding(0, 8, 0, 0)
+                    Height = 46,
+                    Padding = new Padding(0, 8, 14, 8),
+                    BackColor = Color.White
                 };
-                var btnOk = new Button { Text = "确定", DialogResult = DialogResult.OK, Width = 76 };
-                var btnCancel = new Button { Text = "取消", DialogResult = DialogResult.Cancel, Width = 76 };
+                var btnOk = new Button { Text = "确定", DialogResult = DialogResult.OK, Size = new Size(76, 26), Margin = new Padding(8, 0, 0, 0) };
+                var btnCancel = new Button { Text = "取消", DialogResult = DialogResult.Cancel, Size = new Size(76, 26), Margin = new Padding(8, 0, 0, 0) };
                 buttons.Controls.Add(btnOk);
                 buttons.Controls.Add(btnCancel);
-                layout.Controls.Add(buttons);
 
                 AcceptButton = btnOk;
                 CancelButton = btnCancel;
                 Controls.Add(layout);
+                Controls.Add(buttons);
             }
 
             public string NodeName

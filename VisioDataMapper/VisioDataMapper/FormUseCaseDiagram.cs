@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
@@ -12,6 +13,7 @@ namespace VisioDataMapper
 {
     public class FormUseCaseDiagram : Form
     {
+        private const short VisOpenHidden = 64;
         private Button btnImportJson;
         private Button btnGenerate;
         private Button btnClose;
@@ -43,6 +45,11 @@ namespace VisioDataMapper
         private Label lblLayout;
         private Label lblSpacing;
         private Label lblMillimeter;
+        private GroupBox grpActorOptions;
+        private GroupBox grpRelationOptions;
+        private GroupBox grpStyleOptions;
+        private GroupBox grpSpacingOptions;
+        private GroupBox grpActionOptions;
 
         private string systemName = "系统用例图";
         private double currentLineWidth = 0.75;
@@ -58,8 +65,8 @@ namespace VisioDataMapper
         private void InitializeComponent()
         {
             Text = "智能画图-用例图";
-            Size = new Size(900, 850);
-            MinimumSize = new Size(900, 780);
+            Size = new Size(980, 870);
+            MinimumSize = new Size(980, 800);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.Sizable;
             MaximizeBox = true;
@@ -173,7 +180,7 @@ namespace VisioDataMapper
             };
             pnlStatusBorder.Controls.Add(txtStatus);
 
-            lblActorShape = new Label { Text = "参与者形状:", AutoSize = true, ForeColor = SystemColors.ControlText, Margin = new Padding(3, 6, 3, 3) };
+            lblActorShape = new Label { Text = "形状:", AutoSize = true, ForeColor = SystemColors.ControlText, Margin = new Padding(3, 6, 3, 3) };
             cmbActorShape = new ComboBox { Size = new Size(110, 26), DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular), Margin = new Padding(3, 3, 15, 3) };
             cmbActorShape.Items.AddRange(new string[] { "Draw.Io风格", "Visio自带" });
             cmbActorShape.SelectedIndex = 0;
@@ -182,9 +189,9 @@ namespace VisioDataMapper
             chkShowFunctionNodes = new CheckBox { Text = "显示功能节点", AutoSize = true, Checked = true, ForeColor = SystemColors.ControlText, Margin = new Padding(5, 5, 15, 3) };
             chkUseCaseOutline = new CheckBox { Text = "模块/功能添加外边框", AutoSize = true, Checked = true, ForeColor = SystemColors.ControlText, Margin = new Padding(5, 5, 15, 3) };
 
-            lblLayout = new Label { Text = "排版:", AutoSize = true, ForeColor = SystemColors.ControlText, Margin = new Padding(3, 6, 3, 3) };
-            cmbLayout = new ComboBox { Size = new Size(130, 26), DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular), Margin = new Padding(3, 3, 15, 3) };
-            cmbLayout.Items.AddRange(new string[] { "参与者均在左侧", "参与者均在右侧", "参与者左右分布" });
+            lblLayout = new Label { Text = "位置:", AutoSize = true, ForeColor = SystemColors.ControlText, Margin = new Padding(3, 6, 3, 3) };
+            cmbLayout = new ComboBox { Size = new Size(70, 26), DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular), Margin = new Padding(3, 3, 15, 3) };
+            cmbLayout.Items.AddRange(new string[] { "左侧", "右侧", "左右" });
             cmbLayout.SelectedIndex = 0;
 
             lblFontName = new Label { Text = "字体:", AutoSize = true, ForeColor = SystemColors.ControlText, Margin = new Padding(3, 6, 3, 3) };
@@ -196,12 +203,14 @@ namespace VisioDataMapper
 
             lblSpacing = new Label { Text = "横纵间距:", AutoSize = true, ForeColor = SystemColors.ControlText, Margin = new Padding(3, 6, 3, 3) };
             
-            Panel pnlHorSpacingBorder = new Panel { BackColor = SystemColors.Control, Padding = new Padding(0), Size = new Size(40, 24), Margin = new Padding(3, 3, 5, 3) };
+            Panel pnlHorSpacingBorder = new Panel { BackColor = SystemColors.Control, Padding = new Padding(0), Size = new Size(48, 24), Margin = new Padding(3, 3, 5, 3) };
             txtHorizontalSpacing = new TextBox { Text = "15", BorderStyle = BorderStyle.Fixed3D, Dock = DockStyle.Fill, Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular), TextAlign = HorizontalAlignment.Center };
+            EnableMouseWheelNumberInput(txtHorizontalSpacing, 1.0, 0.1, 0.0);
             pnlHorSpacingBorder.Controls.Add(txtHorizontalSpacing);
 
-            Panel pnlVerSpacingBorder = new Panel { BackColor = SystemColors.Control, Padding = new Padding(0), Size = new Size(40, 24), Margin = new Padding(3, 3, 5, 3) };
+            Panel pnlVerSpacingBorder = new Panel { BackColor = SystemColors.Control, Padding = new Padding(0), Size = new Size(48, 24), Margin = new Padding(3, 3, 5, 3) };
             txtVerticalSpacing = new TextBox { Text = "8", BorderStyle = BorderStyle.Fixed3D, Dock = DockStyle.Fill, Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular), TextAlign = HorizontalAlignment.Center };
+            EnableMouseWheelNumberInput(txtVerticalSpacing, 1.0, 0.1, 0.0);
             pnlVerSpacingBorder.Controls.Add(txtVerticalSpacing);
 
             lblMillimeter = new Label { Text = "mm", AutoSize = true, ForeColor = SystemColors.ControlText, Margin = new Padding(0, 6, 15, 3) };
@@ -229,36 +238,54 @@ namespace VisioDataMapper
             {
                 BackColor = SystemColors.Control,
                 BorderStyle = BorderStyle.None,
-                Height = 135
+                Height = 195
             };
 
-            FlowLayoutPanel row1 = new FlowLayoutPanel { Location = new Point(5, 5), Size = new Size(700, 36), Padding = new Padding(0) };
-            row1.Controls.Add(lblActorShape);
-            row1.Controls.Add(cmbActorShape);
-            row1.Controls.Add(chkEnglishRelationText);
-            row1.Controls.Add(chkShowFunctionNodes);
-            row1.Controls.Add(chkUseCaseOutline);
+            grpActorOptions = CreateOptionGroup("参与者", new Point(0, 0), new Size(410, 70));
+            var actorPanel = CreateOptionFlowPanel();
+            actorPanel.Controls.Add(lblActorShape);
+            actorPanel.Controls.Add(cmbActorShape);
+            actorPanel.Controls.Add(lblLayout);
+            actorPanel.Controls.Add(cmbLayout);
+            grpActorOptions.Controls.Add(actorPanel);
 
-            FlowLayoutPanel row2 = new FlowLayoutPanel { Location = new Point(5, 45), Size = new Size(700, 36), Padding = new Padding(0) };
-            row2.Controls.Add(lblLayout);
-            row2.Controls.Add(cmbLayout);
-            row2.Controls.Add(lblFontName);
-            row2.Controls.Add(cmbFontName);
-            row2.Controls.Add(lblFontSize);
-            row2.Controls.Add(cmbFontSize);
+            grpRelationOptions = CreateOptionGroup("关系", new Point(420, 0), new Size(500, 110));
+            var relationPanel = CreateOptionFlowPanel();
+            relationPanel.Size = new Size(480, 78);
+            relationPanel.WrapContents = true;
+            relationPanel.Controls.Add(chkEnglishRelationText);
+            relationPanel.Controls.Add(chkAssociationArrow);
+            relationPanel.Controls.Add(chkShowFunctionNodes);
+            relationPanel.Controls.Add(chkUseCaseOutline);
+            grpRelationOptions.Controls.Add(relationPanel);
 
-            FlowLayoutPanel row3 = new FlowLayoutPanel { Location = new Point(5, 85), Size = new Size(500, 40), Padding = new Padding(0) };
-            row3.Controls.Add(lblSpacing);
-            row3.Controls.Add(pnlHorSpacingBorder);
-            row3.Controls.Add(pnlVerSpacingBorder);
-            row3.Controls.Add(lblMillimeter);
-            row3.Controls.Add(chkAssociationArrow);
+            grpStyleOptions = CreateOptionGroup("样式", new Point(0, 120), new Size(320, 70));
+            var stylePanel = CreateOptionFlowPanel();
+            stylePanel.Controls.Add(lblFontName);
+            stylePanel.Controls.Add(cmbFontName);
+            stylePanel.Controls.Add(lblFontSize);
+            stylePanel.Controls.Add(cmbFontSize);
+            grpStyleOptions.Controls.Add(stylePanel);
 
-            pnlOptions.Controls.Add(row1);
-            pnlOptions.Controls.Add(row2);
-            pnlOptions.Controls.Add(row3);
-            pnlOptions.Controls.Add(btnGenerate);
-            pnlOptions.Controls.Add(btnClose);
+            grpSpacingOptions = CreateOptionGroup("间距", new Point(330, 120), new Size(280, 70));
+            var spacingPanel = CreateOptionFlowPanel();
+            spacingPanel.Controls.Add(lblSpacing);
+            spacingPanel.Controls.Add(pnlHorSpacingBorder);
+            spacingPanel.Controls.Add(pnlVerSpacingBorder);
+            spacingPanel.Controls.Add(lblMillimeter);
+            grpSpacingOptions.Controls.Add(spacingPanel);
+
+            grpActionOptions = CreateOptionGroup("操作", new Point(660, 120), new Size(260, 70));
+            btnGenerate.Location = new Point(12, 24);
+            btnClose.Location = new Point(145, 24);
+            grpActionOptions.Controls.Add(btnGenerate);
+            grpActionOptions.Controls.Add(btnClose);
+
+            pnlOptions.Controls.Add(grpActorOptions);
+            pnlOptions.Controls.Add(grpRelationOptions);
+            pnlOptions.Controls.Add(grpStyleOptions);
+            pnlOptions.Controls.Add(grpSpacingOptions);
+            pnlOptions.Controls.Add(grpActionOptions);
 
             Controls.Add(lblTip);
             Controls.Add(btnImportJson);
@@ -331,6 +358,56 @@ namespace VisioDataMapper
             return combo;
         }
 
+        private GroupBox CreateOptionGroup(string text, Point location, Size size)
+        {
+            return new GroupBox
+            {
+                Text = text,
+                Location = location,
+                Size = size,
+                Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular)
+            };
+        }
+
+        private FlowLayoutPanel CreateOptionFlowPanel()
+        {
+            return new FlowLayoutPanel
+            {
+                Location = new Point(8, 22),
+                Size = new Size(1000, 32),
+                Padding = new Padding(0),
+                WrapContents = false,
+                AutoScroll = false
+            };
+        }
+
+        private void EnableMouseWheelNumberInput(TextBox textBox, double normalStep, double fineStep, double minValue)
+        {
+            textBox.MouseWheel += (s, e) =>
+            {
+                double current;
+                if (!double.TryParse(textBox.Text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out current))
+                {
+                    current = minValue;
+                }
+
+                double step = (ModifierKeys & Keys.Control) == Keys.Control ? fineStep : normalStep;
+                double next = current + (e.Delta > 0 ? step : -step);
+                if (next < minValue)
+                {
+                    next = minValue;
+                }
+
+                textBox.Text = FormatNumberForInput(next);
+                textBox.SelectAll();
+            };
+        }
+
+        private string FormatNumberForInput(double value)
+        {
+            return value.ToString(Math.Abs(value - Math.Round(value)) < 0.0001 ? "0" : "0.#", CultureInfo.InvariantCulture);
+        }
+
         private void LayoutControls()
         {
             if (tabActors == null || pnlOptions == null)
@@ -339,7 +416,7 @@ namespace VisioDataMapper
             }
 
             int margin = 15;
-            int width = Math.Max(820, ClientSize.Width - margin * 2);
+            int width = Math.Max(930, ClientSize.Width - margin * 2);
 
             // Reposition top elements
             pnlTitleBorder.Left = Math.Max(535, margin + width - pnlTitleBorder.Width);
@@ -359,11 +436,55 @@ namespace VisioDataMapper
             pnlTabContainer.Width = width;
             pnlTabContainer.Height = Math.Max(200, pnlStatusBorder.Top - pnlTabContainer.Top - margin);
 
-            // Inside panel, reposition buttons dynamically to match right side
-            btnClose.Top = 85;
-            btnClose.Left = pnlOptions.Width - 15 - btnClose.Width;
-            btnGenerate.Top = 85;
-            btnGenerate.Left = btnClose.Left - 15 - btnGenerate.Width;
+            if (grpActorOptions != null && grpActionOptions != null)
+            {
+                int gap = 10;
+                grpActorOptions.Location = new Point(0, 0);
+                grpActorOptions.Size = new Size(410, 70);
+
+                grpRelationOptions.Location = new Point(grpActorOptions.Right + gap, 0);
+                grpRelationOptions.Size = new Size(Math.Max(500, pnlOptions.Width - grpRelationOptions.Left), 110);
+
+                grpStyleOptions.Location = new Point(0, 120);
+                grpStyleOptions.Size = new Size(320, 70);
+                grpSpacingOptions.Location = new Point(grpStyleOptions.Right + gap, 120);
+                grpSpacingOptions.Size = new Size(280, 70);
+
+                grpActionOptions.Location = new Point(Math.Max(grpSpacingOptions.Right + gap, pnlOptions.Width - grpActionOptions.Width), 120);
+                grpActionOptions.Size = new Size(260, 70);
+                ResizeOptionInnerPanels();
+                EnsureOptionGroupsDoNotOverlap();
+            }
+        }
+
+        private void ResizeOptionInnerPanels()
+        {
+            foreach (GroupBox group in new[] { grpActorOptions, grpRelationOptions, grpStyleOptions, grpSpacingOptions })
+            {
+                if (group.Controls.Count > 0)
+                {
+                    group.Controls[0].Width = Math.Max(20, group.ClientSize.Width - 16);
+                }
+            }
+        }
+
+        private void EnsureOptionGroupsDoNotOverlap()
+        {
+            var groups = new[] { grpActorOptions, grpRelationOptions, grpStyleOptions, grpSpacingOptions, grpActionOptions };
+            for (int i = 0; i < groups.Length; i++)
+            {
+                for (int j = i + 1; j < groups.Length; j++)
+                {
+                    if (groups[i].Bounds.IntersectsWith(groups[j].Bounds))
+                    {
+                        System.Diagnostics.Debug.WriteLine($"用例图设置区布局重叠: {groups[i].Text} / {groups[j].Text}");
+                    }
+                }
+                if (groups[i].Right > pnlOptions.Width || groups[i].Bottom > pnlOptions.Height)
+                {
+                    System.Diagnostics.Debug.WriteLine($"用例图设置区超出边界: {groups[i].Text}");
+                }
+            }
         }
 
         private void FormUseCaseDiagram_Resize(object sender, EventArgs e)
@@ -457,7 +578,7 @@ User -- (申请充值退款)
                 }
 
                 RenderDiagram();
-                MessageBox.Show("用例图生成成功！", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                Close();
             }
             catch (Exception ex)
             {
@@ -491,7 +612,7 @@ User -- (申请充值退款)
                 || Regex.IsMatch(text, @"--\s*\(");
         }
 
-        private void ImportJson(string json)
+        private void ImportJson(string json, bool selectFirstActorTab)
         {
             var serializer = new JavaScriptSerializer();
             UseCaseJsonRoot root = serializer.Deserialize<UseCaseJsonRoot>(json);
@@ -559,15 +680,20 @@ User -- (申请充值退款)
                 }
             }
 
-            if (tabActors.TabPages.Count > 1)
+            if (selectFirstActorTab)
             {
-                tabActors.SelectedIndex = 1; // Select the first actor tab
+                SelectFirstActorTab();
             }
 
             AppendLog($"已成功导入{txtTitle.Text} {tabActors.TabPages.Count - 1}个参与者 {objectCount}个对象 {relationCount}组关系");
         }
 
-        private void ImportPlantUml(string uml)
+        private void ImportJson(string json)
+        {
+            ImportJson(json, true);
+        }
+
+        private void ImportPlantUml(string uml, bool selectFirstActorTab)
         {
             PlantUmlUseCaseModel model = ParsePlantUmlUseCase(uml);
             if (model.Actors.Count == 0)
@@ -599,12 +725,29 @@ User -- (申请充值退款)
                 }
             }
 
-            if (tabActors.TabPages.Count > 1)
+            if (selectFirstActorTab)
             {
-                tabActors.SelectedIndex = 1;
+                SelectFirstActorTab();
             }
 
             AppendLog($"已导入PlantUML用例图：{actorUseCases.Count}个参与者，{model.UseCases.Count}个用例。");
+        }
+
+        private void ImportPlantUml(string uml)
+        {
+            ImportPlantUml(uml, true);
+        }
+
+        private void SelectFirstActorTab()
+        {
+            foreach (TabPage page in tabActors.TabPages)
+            {
+                if (page != tabJson && page != tabPlantUml)
+                {
+                    tabActors.SelectedTab = page;
+                    return;
+                }
+            }
         }
 
         private PlantUmlUseCaseModel ParsePlantUmlUseCase(string uml)
@@ -754,7 +897,7 @@ User -- (申请充值退款)
             try
             {
                 RenderDiagram();
-                MessageBox.Show("用例图生成成功！", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                Close();
             }
             catch (Exception ex)
             {
@@ -799,7 +942,7 @@ User -- (申请充值退款)
             {
                 try
                 {
-                    ImportJson(text);
+                    ImportJson(text, false);
                 }
                 catch
                 {
@@ -823,7 +966,7 @@ User -- (申请充值退款)
 
             try
             {
-                ImportPlantUml(text);
+                ImportPlantUml(text, false);
             }
             catch
             {
@@ -939,12 +1082,13 @@ User -- (申请充值退款)
             double boundaryTop = pageHeight - 0.9;
             double boundaryBottom = 0.65;
 
-            if (cmbLayout.SelectedItem != null && cmbLayout.SelectedItem.ToString() == "参与者均在右侧")
+            string actorPosition = GetSelectedActorPosition();
+            if (actorPosition == "右侧")
             {
                 boundaryLeft = 0.75;
                 boundaryRight = pageWidth - 2.15;
             }
-            else if (cmbLayout.SelectedItem != null && cmbLayout.SelectedItem.ToString() == "参与者左右分布")
+            else if (actorPosition == "左右")
             {
                 boundaryLeft = 1.65;
                 boundaryRight = pageWidth - 1.65;
@@ -994,14 +1138,14 @@ User -- (申请充值退款)
                 return;
             }
 
-            string layout = cmbLayout.SelectedItem == null ? "参与者均在左侧" : cmbLayout.SelectedItem.ToString();
+            string layout = GetSelectedActorPosition();
             List<string> leftActors = new List<string>();
             List<string> rightActors = new List<string>();
-            if (layout == "参与者均在右侧")
+            if (layout == "右侧")
             {
                 rightActors.AddRange(actors);
             }
-            else if (layout == "参与者左右分布")
+            else if (layout == "左右")
             {
                 for (int i = 0; i < actors.Count; i++)
                 {
@@ -1024,6 +1168,15 @@ User -- (申请充值退款)
             DrawActorColumn(page, rightActors, anchors, boundaryRight + 0.9, boundaryBottom, boundaryTop);
         }
 
+        private string GetSelectedActorPosition()
+        {
+            string selected = cmbLayout.SelectedItem == null ? "左侧" : cmbLayout.SelectedItem.ToString();
+            if (selected == "参与者均在右侧") return "右侧";
+            if (selected == "参与者左右分布") return "左右";
+            if (selected == "右侧" || selected == "左右") return selected;
+            return "左侧";
+        }
+
         private void DrawActorColumn(Visio.Page page, List<string> actors, Dictionary<string, ShapeAnchor> anchors, double x, double bottom, double top)
         {
             if (actors.Count == 0)
@@ -1038,7 +1191,8 @@ User -- (申请充值退款)
             {
                 double y = startY - i * gap;
                 Visio.Shape actorShape;
-                if (cmbActorShape.SelectedItem != null && cmbActorShape.SelectedItem.ToString() == "Visio自带")
+                bool useVisioActor = cmbActorShape.SelectedItem != null && cmbActorShape.SelectedItem.ToString() == "Visio自带";
+                if (useVisioActor)
                 {
                     actorShape = DrawVisioActor(page, actors[i], x, y);
                 }
@@ -1047,7 +1201,9 @@ User -- (申请充值退款)
                     actorShape = DrawStickActor(page, actors[i], x, y);
                 }
 
-                anchors[actors[i]] = new ShapeAnchor { Name = actors[i], X = x, Y = y, Width = 0.62, Height = 0.95, IsActor = true, Shape = actorShape };
+                double actorWidth = useVisioActor ? 0.48 : GetShapeSizeInches(actorShape, "Width", 0.75);
+                double actorHeight = useVisioActor ? 0.9 : GetShapeSizeInches(actorShape, "Height", 1.05);
+                anchors[actors[i]] = new ShapeAnchor { Name = actors[i], X = x, Y = y, Width = actorWidth, Height = actorHeight, IsActor = true, Shape = actorShape };
             }
         }
 
@@ -1099,22 +1255,128 @@ User -- (申请充值退款)
 
         private Visio.Shape DrawVisioActor(Visio.Page page, string name, double x, double y)
         {
-            var shapes = new List<Visio.Shape>();
-            double headR = 0.12;
-            Visio.Shape head = page.DrawOval(x - headR, y + 0.28, x + headR, y + 0.52);
-            ApplyBoxStyle(head);
-            shapes.Add(head);
-            shapes.Add(DrawStyledLine(page, x, y + 0.28, x, y - 0.17, false, string.Empty));
-            shapes.Add(DrawStyledLine(page, x - 0.28, y + 0.08, x + 0.28, y + 0.08, false, string.Empty));
-            shapes.Add(DrawStyledLine(page, x, y - 0.17, x - 0.26, y - 0.5, false, string.Empty));
-            shapes.Add(DrawStyledLine(page, x, y - 0.17, x + 0.26, y - 0.5, false, string.Empty));
-            Visio.Shape label = page.DrawRectangle(x - 0.52, y - 0.82, x + 0.52, y - 0.56);
+            Visio.Master actorMaster = TryGetVisioActorMaster(page.Application);
+            if (actorMaster == null)
+            {
+                AppendLog("未找到Visio自带参与者母版，已使用手绘小人。");
+                return DrawStickActor(page, name, x, y);
+            }
+
+            Visio.Shape actor = page.Drop(actorMaster, x, y);
+            actor.Text = string.Empty;
+            TrySetFormula(actor, "Width", "0.48 in");
+            TrySetFormula(actor, "Height", "0.9 in");
+
+            Visio.Shape label = page.DrawRectangle(x - 0.42, y - 0.69, x + 0.42, y - 0.45);
             label.Text = name;
             ApplyTextShapeStyle(label, currentFontName, currentFontSize, false);
             TrySetFormula(label, "FillPattern", "0");
             TrySetFormula(label, "LinePattern", "0");
-            shapes.Add(label);
-            return GroupShapes(page, shapes);
+
+            return actor;
+        }
+
+        private Visio.Master TryGetVisioActorMaster(Visio.Application app)
+        {
+            IEnumerable<string> stencilNames = GetUseCaseStencilCandidates();
+            string[] masterNames =
+            {
+                "Actor",
+                "Actor lifeline",
+                "参与者",
+                "执行者"
+            };
+
+            foreach (string stencilName in stencilNames)
+            {
+                Visio.Document stencil = TryOpenStencil(app, stencilName);
+                if (stencil == null) continue;
+
+                foreach (string masterName in masterNames)
+                {
+                    Visio.Master master = TryGetMaster(stencil, masterName);
+                    if (master != null)
+                    {
+                        return master;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private IEnumerable<string> GetUseCaseStencilCandidates()
+        {
+            string[] fileNames =
+            {
+                "UUSEME_M.VSSX",
+                "UUSEME_U.VSSX",
+                "UUSEME_M.vssx",
+                "UUSEME_U.vssx",
+                "UML Use Case.vssx",
+                "UML Use Case.vss",
+                "UMLUSEC.vssx",
+                "UMLUSEC.vss",
+                "UML 用例.vssx",
+                "UML 用例.vss"
+            };
+
+            foreach (string fileName in fileNames)
+            {
+                yield return fileName;
+            }
+
+            string[] roots =
+            {
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+            };
+            string[] languageFolders = { "2052", "1033" };
+            foreach (string root in roots.Where(path => !string.IsNullOrWhiteSpace(path)).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                foreach (string languageFolder in languageFolders)
+                {
+                    foreach (string fileName in fileNames)
+                    {
+                        string candidate = Path.Combine(root, "Microsoft Office", "root", "Office16", "Visio Content", languageFolder, fileName);
+                        if (File.Exists(candidate))
+                        {
+                            yield return candidate;
+                        }
+                    }
+                }
+            }
+        }
+
+        private Visio.Document TryOpenStencil(Visio.Application app, string stencilName)
+        {
+            try
+            {
+                foreach (Visio.Document document in app.Documents)
+                {
+                    if (string.Equals(document.Name, Path.GetFileName(stencilName), StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(document.FullName, stencilName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return document;
+                    }
+                }
+                return app.Documents.OpenEx(stencilName, VisOpenHidden);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private Visio.Master TryGetMaster(Visio.Document stencil, string masterName)
+        {
+            try
+            {
+                return stencil.Masters[masterName];
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private Visio.Shape DrawStickActor(Visio.Page page, string name, double x, double y)
@@ -1328,6 +1590,18 @@ User -- (申请充值退款)
         {
             int count = Math.Max(1, (text ?? string.Empty).Length);
             return Math.Max(minWidth, count * fontSize * 0.0105 + 0.36);
+        }
+
+        private double GetShapeSizeInches(Visio.Shape shape, string cellName, double fallback)
+        {
+            try
+            {
+                return shape.CellsU[cellName].Result["in"];
+            }
+            catch
+            {
+                return fallback;
+            }
         }
 
         private void ApplyTextShapeStyle(Visio.Shape shape, string fontName, double fontSize, bool bold)
