@@ -38,6 +38,7 @@ namespace VisioDataMapper
 
         private Label lblLayoutScheme;
         private ComboBox cmbLayoutScheme;
+        private GroupBox grpOptions;
 
         private string currentFontName = "宋体";
         private double currentFontSizePt = 10.5;
@@ -58,23 +59,23 @@ namespace VisioDataMapper
     edge [fontname=""SimHei"", fontsize=9];
 
     // 1.外部实体：管理员（普通矩形）
-    Admin [label=""管理员"", shape=box, style=filled, fillcolor=""#e8f4ff""];
+    Admin [label=""管理员"", shape=box, style=filled, fillcolor=""#e8f4ff"", x=8, y=42];
 
     // 2.所有加工：圆角矩形
-    P01 [label=""P0.1 用户信息管理"", shape=roundedbox, style=filled, fillcolor=""#d7f5e8""];
-    P02 [label=""P0.2 图书分类管理"", shape=roundedbox, style=filled, fillcolor=""#d7f5e8""];
-    P03 [label=""P0.3 公告分类管理"", shape=roundedbox, style=filled, fillcolor=""#d7f5e8""];
-    P04 [label=""P0.4 系统日志管理"", shape=roundedbox, style=filled, fillcolor=""#d7f5e8""];
-    P05 [label=""P0.5 系统参数管理"", shape=roundedbox, style=filled, fillcolor=""#d7f5e8""];
-    P06 [label=""P0.6 全流程业务管理"", shape=roundedbox, style=filled, fillcolor=""#d7f5e8""];
+    P01 [label=""P0.1 用户信息管理"", shape=roundedbox, style=filled, fillcolor=""#d7f5e8"", x=28, y=18];
+    P02 [label=""P0.2 图书分类管理"", shape=roundedbox, style=filled, fillcolor=""#d7f5e8"", x=28, y=34];
+    P03 [label=""P0.3 公告分类管理"", shape=roundedbox, style=filled, fillcolor=""#d7f5e8"", x=28, y=50];
+    P04 [label=""P0.4 系统日志管理"", shape=roundedbox, style=filled, fillcolor=""#d7f5e8"", x=52, y=78];
+    P05 [label=""P0.5 系统参数管理"", shape=roundedbox, style=filled, fillcolor=""#d7f5e8"", x=28, y=66];
+    P06 [label=""P0.6 全流程业务管理"", shape=roundedbox, style=filled, fillcolor=""#d7f5e8"", x=55, y=42];
 
     // 3.数据存储：record 双线数据表（DFD标准存储样式，独立分开，不打包）
-    D1 [label=""D1\n用户信息表"", shape=record, style=filled, fillcolor=""#fff2cc""];
-    D2 [label=""D2\n图书分类表"", shape=record, style=filled, fillcolor=""#fff2cc""];
-    D3 [label=""D3\n公告分类表"", shape=record, style=filled, fillcolor=""#fff2cc""];
-    D4 [label=""D4\n系统日志表"", shape=record, style=filled, fillcolor=""#fff2cc""];
-    D5 [label=""D5\n系统参数表"", shape=record, style=filled, fillcolor=""#fff2cc""];
-    D6 [label=""D6\n图书信息表"", shape=record, style=filled, fillcolor=""#fff2cc""];
+    D1 [label=""D1\n用户信息表"", shape=record, style=filled, fillcolor=""#fff2cc"", x=72, y=18];
+    D2 [label=""D2\n图书分类表"", shape=record, style=filled, fillcolor=""#fff2cc"", x=72, y=34];
+    D3 [label=""D3\n公告分类表"", shape=record, style=filled, fillcolor=""#fff2cc"", x=72, y=50];
+    D4 [label=""D4\n系统日志表"", shape=record, style=filled, fillcolor=""#fff2cc"", x=72, y=78];
+    D5 [label=""D5\n系统参数表"", shape=record, style=filled, fillcolor=""#fff2cc"", x=72, y=66];
+    D6 [label=""D6\n图书信息表"", shape=record, style=filled, fillcolor=""#fff2cc"", x=86, y=42];
 
     // ========== 1.管理员 → 各加工 数据流 ==========
     Admin -> P01 [label=""用户维护表单""];
@@ -122,17 +123,17 @@ namespace VisioDataMapper
     node [fontname=""SimHei"", fontsize=10];
     edge [fontname=""SimHei"", fontsize=9];
 
-    User [label=""读者"", shape=box];
-    Admin [label=""管理员"", shape=box];
-    Librarian [label=""图书管理员"", shape=box];
-    Payment [label=""支付平台"", shape=box];
+    User [label=""读者"", shape=box, x=8, y=28];
+    Admin [label=""管理员"", shape=box, x=8, y=52];
+    Librarian [label=""图书管理员"", shape=box, x=8, y=76];
+    Payment [label=""支付平台"", shape=box, x=92, y=52];
 
-    P0 [label=""P0 图书借阅管理系统"", shape=roundedbox];
+    P0 [label=""P0 图书借阅管理系统"", shape=roundedbox, x=50, y=52];
 
-    D1 [label=""D1\n用户信息表"", shape=record];
-    D2 [label=""D2\n图书信息表"", shape=record];
-    D3 [label=""D3\n借阅记录表"", shape=record];
-    D4 [label=""D4\n支付记录表"", shape=record];
+    D1 [label=""D1\n用户信息表"", shape=record, x=30, y=88];
+    D2 [label=""D2\n图书信息表"", shape=record, x=44, y=88];
+    D3 [label=""D3\n借阅记录表"", shape=record, x=58, y=88];
+    D4 [label=""D4\n支付记录表"", shape=record, x=72, y=88];
 
     User -> P0 [label=""注册登录信息、查询条件、借阅申请""];
     P0 -> User [label=""图书检索结果、借阅状态、通知信息""];
@@ -179,7 +180,7 @@ namespace VisioDataMapper
 
             Font defaultFont = new Font("Microsoft YaHei", 9F, FontStyle.Regular);
             this.Font = defaultFont;
-            this.BackColor = Color.FromArgb(240, 244, 248);
+            this.BackColor = SystemColors.Control;
 
             // 头部提示与按钮
             Label lblTip = new Label
@@ -187,7 +188,7 @@ namespace VisioDataMapper
                 Text = $"请将您的{GetDiagramLevelName()}信息导入到表格，内容格式参考→ 双击此处，查看AI智能画图教程",
                 Location = new Point(15, 15),
                 AutoSize = true,
-                ForeColor = Color.FromArgb(90, 107, 124),
+                ForeColor = SystemColors.ControlText,
                 Font = new Font("Microsoft YaHei", 9.5F, FontStyle.Regular)
             };
 
@@ -196,13 +197,12 @@ namespace VisioDataMapper
                 Text = "导入表格",
                 Location = new Point(15, 45),
                 Size = new Size(110, 32),
-                FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(0, 122, 255),
-                ForeColor = Color.White,
-                Font = new Font("Microsoft YaHei", 9F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Standard,
+                UseVisualStyleBackColor = true,
+                ForeColor = SystemColors.ControlText,
+                Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular),
                 Cursor = Cursors.Hand
             };
-            btnImportTable.FlatAppearance.BorderSize = 0;
             btnImportTable.Click += btnImportTable_Click;
 
             lblTitle = new Label
@@ -210,7 +210,7 @@ namespace VisioDataMapper
                 Text = "大标题:",
                 Location = new Point(280, 50),
                 AutoSize = true,
-                ForeColor = Color.FromArgb(74, 85, 104)
+                ForeColor = SystemColors.ControlText
             };
 
             txtTitle = new TextBox
@@ -229,17 +229,17 @@ namespace VisioDataMapper
                 AllowUserToDeleteRows = true,
                 RowHeadersVisible = false,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                BackgroundColor = Color.White,
-                GridColor = Color.FromArgb(230, 235, 240),
-                CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal,
-                ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None,
-                EnableHeadersVisualStyles = false,
+                BackgroundColor = SystemColors.Window,
+                GridColor = SystemColors.ControlLight,
+                CellBorderStyle = DataGridViewCellBorderStyle.Single,
+                ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single,
+                EnableHeadersVisualStyles = true,
+                BorderStyle = BorderStyle.Fixed3D,
                 RowTemplate = { Height = 28 }
             };
 
-            dgvData.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(240, 244, 248);
-            dgvData.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(73, 80, 87);
-            dgvData.ColumnHeadersDefaultCellStyle.Font = new Font("Microsoft YaHei", 9F, FontStyle.Bold);
+            dgvData.ColumnHeadersDefaultCellStyle.ForeColor = SystemColors.ControlText;
+            dgvData.ColumnHeadersDefaultCellStyle.Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular);
 
             dgvData.Columns.Add(new DataGridViewTextBoxColumn { Name = "Index", HeaderText = "序号", FillWeight = 40 });
             dgvData.Columns.Add(new DataGridViewTextBoxColumn { Name = "Text", HeaderText = "形状文本", FillWeight = 140 });
@@ -261,100 +261,151 @@ namespace VisioDataMapper
                 Multiline = true,
                 ReadOnly = true,
                 ScrollBars = ScrollBars.Vertical,
-                BackColor = Color.FromArgb(248, 250, 252),
-                ForeColor = Color.FromArgb(100, 116, 139),
-                BorderStyle = BorderStyle.None,
+                BackColor = SystemColors.Control,
+                ForeColor = SystemColors.ControlText,
+                BorderStyle = BorderStyle.Fixed3D,
                 Text = $"{DateTime.Now:HH:mm:ss} 初次启动{GetDiagramLevelName()}。建议通过剪贴板复制 DOT 文本，然后点击“导入表格”自动解析。"
             };
 
             // 底部配置面板
-            Panel pnlOptions = new Panel
+            grpOptions = new GroupBox
             {
+                Text = "绘图设置",
                 Location = new Point(15, 550),
-                Size = new Size(875, 130),
-                BackColor = Color.White
-            };
-            pnlOptions.Paint += (s, pe) =>
-            {
-                using (var pen = new Pen(Color.FromArgb(218, 224, 233), 1))
-                {
-                    pe.Graphics.DrawRectangle(pen, 0, 0, pnlOptions.Width - 1, pnlOptions.Height - 1);
-                }
+                Size = new Size(875, 150),
+                BackColor = SystemColors.Control
             };
 
-            lblEntityStyle = new Label { Text = "外部实体:", Location = new Point(15, 20), AutoSize = true };
-            cmbEntityStyle = new ComboBox { Location = new Point(80, 16), Size = new Size(100, 25), DropDownStyle = ComboBoxStyle.DropDownList };
+            lblEntityStyle = new Label { Text = "外部实体:", Location = new Point(15, 28), AutoSize = true };
+            cmbEntityStyle = new ComboBox { Location = new Point(80, 24), Size = new Size(105, 25), DropDownStyle = ComboBoxStyle.DropDownList };
             cmbEntityStyle.Items.AddRange(new string[] { "矩形" });
             cmbEntityStyle.SelectedIndex = 0;
 
-            lblProcessStyle = new Label { Text = "数据处理:", Location = new Point(200, 20), AutoSize = true };
-            cmbProcessStyle = new ComboBox { Location = new Point(265, 16), Size = new Size(110, 25), DropDownStyle = ComboBoxStyle.DropDownList };
+            lblProcessStyle = new Label { Text = "数据处理:", Location = new Point(205, 28), AutoSize = true };
+            cmbProcessStyle = new ComboBox { Location = new Point(270, 24), Size = new Size(120, 25), DropDownStyle = ComboBoxStyle.DropDownList };
             cmbProcessStyle.Items.AddRange(new string[] { "正方形-带标", "圆角矩形" });
             cmbProcessStyle.SelectedIndex = 0;
 
-            lblStoreStyle = new Label { Text = "数据存储:", Location = new Point(400, 20), AutoSize = true };
-            cmbStoreStyle = new ComboBox { Location = new Point(465, 16), Size = new Size(140, 25), DropDownStyle = ComboBoxStyle.DropDownList };
+            lblStoreStyle = new Label { Text = "数据存储:", Location = new Point(410, 28), AutoSize = true };
+            cmbStoreStyle = new ComboBox { Location = new Point(475, 24), Size = new Size(155, 25), DropDownStyle = ComboBoxStyle.DropDownList };
             cmbStoreStyle.Items.AddRange(new string[] { "小正方形+两横线", "三边矩形(右开口)" });
             cmbStoreStyle.SelectedIndex = 0;
 
-            lblLayoutScheme = new Label { Text = "排版方案:", Location = new Point(620, 20), AutoSize = true };
-            cmbLayoutScheme = new ComboBox { Location = new Point(690, 16), Size = new Size(160, 25), DropDownStyle = ComboBoxStyle.DropDownList };
+            lblLayoutScheme = new Label { Text = "排版方案:", Location = new Point(15, 70), AutoSize = true };
+            cmbLayoutScheme = new ComboBox { Location = new Point(80, 66), Size = new Size(205, 25), DropDownStyle = ComboBoxStyle.DropDownList };
             cmbLayoutScheme.Items.AddRange(new string[] { "方案 A (Visio避让)", "方案 B (拓扑分层布局)", "方案 C (DFD语义分区)", "方案 E (智能语义拓扑布局)" });
             cmbLayoutScheme.SelectedIndex = diagramLevel == DataFlowDiagramLevel.Top ? 2 : diagramLevel == DataFlowDiagramLevel.Level2 ? 3 : 0;
 
-            lblConnectorStyle = new Label { Text = "连接线:", Location = new Point(15, 65), AutoSize = true };
-            cmbConnectorStyle = new ComboBox { Location = new Point(80, 61), Size = new Size(140, 25), DropDownStyle = ComboBoxStyle.DropDownList };
+            lblConnectorStyle = new Label { Text = "连接线:", Location = new Point(305, 70), AutoSize = true };
+            cmbConnectorStyle = new ComboBox { Location = new Point(360, 66), Size = new Size(150, 25), DropDownStyle = ComboBoxStyle.DropDownList };
             cmbConnectorStyle.Items.AddRange(new string[] { "绑定形状", "绑定新增连接点", "普通动态连线" });
             cmbConnectorStyle.SelectedIndex = 0;
 
-            lblSpacing = new Label { Text = "横纵向间距:", Location = new Point(245, 65), AutoSize = true };
-            txtHorSpacing = new TextBox { Text = "30", Location = new Point(325, 61), Size = new Size(40, 25), TextAlign = HorizontalAlignment.Center };
-            txtVerSpacing = new TextBox { Text = "35", Location = new Point(375, 61), Size = new Size(40, 25), TextAlign = HorizontalAlignment.Center };
-            lblSpacingUnit = new Label { Text = "mm", Location = new Point(420, 65), AutoSize = true };
+            lblSpacing = new Label { Text = "横纵向间距:", Location = new Point(530, 70), AutoSize = true };
+            txtHorSpacing = new TextBox { Text = "30", Location = new Point(610, 66), Size = new Size(45, 25), TextAlign = HorizontalAlignment.Center };
+            txtVerSpacing = new TextBox { Text = "35", Location = new Point(665, 66), Size = new Size(45, 25), TextAlign = HorizontalAlignment.Center };
+            lblSpacingUnit = new Label { Text = "mm", Location = new Point(720, 70), AutoSize = true };
 
             btnGenerate = new Button
             {
                 Text = "生成绘图",
-                Location = new Point(620, 45),
+                Location = new Point(620, 105),
                 Size = new Size(110, 36),
-                FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(40, 167, 69),
-                ForeColor = Color.White,
-                Font = new Font("Microsoft YaHei", 9.5F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Standard,
+                UseVisualStyleBackColor = true,
+                ForeColor = SystemColors.ControlText,
+                Font = new Font("Microsoft YaHei", 9F, FontStyle.Regular),
                 Cursor = Cursors.Hand
             };
-            btnGenerate.FlatAppearance.BorderSize = 0;
             btnGenerate.Click += btnGenerate_Click;
 
             btnClose = new Button
             {
                 Text = "关闭",
-                Location = new Point(745, 45),
+                Location = new Point(745, 105),
                 Size = new Size(100, 36),
-                FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(233, 236, 239),
-                ForeColor = Color.FromArgb(73, 80, 87),
+                FlatStyle = FlatStyle.Standard,
+                UseVisualStyleBackColor = true,
+                ForeColor = SystemColors.ControlText,
                 Cursor = Cursors.Hand
             };
-            btnClose.FlatAppearance.BorderSize = 0;
             btnClose.Click += btnClose_Click;
 
-            pnlOptions.Controls.Add(lblEntityStyle);
-            pnlOptions.Controls.Add(cmbEntityStyle);
-            pnlOptions.Controls.Add(lblProcessStyle);
-            pnlOptions.Controls.Add(cmbProcessStyle);
-            pnlOptions.Controls.Add(lblStoreStyle);
-            pnlOptions.Controls.Add(cmbStoreStyle);
-            pnlOptions.Controls.Add(lblLayoutScheme);
-            pnlOptions.Controls.Add(cmbLayoutScheme);
-            pnlOptions.Controls.Add(lblConnectorStyle);
-            pnlOptions.Controls.Add(cmbConnectorStyle);
-            pnlOptions.Controls.Add(lblSpacing);
-            pnlOptions.Controls.Add(txtHorSpacing);
-            pnlOptions.Controls.Add(txtVerSpacing);
-            pnlOptions.Controls.Add(lblSpacingUnit);
-            pnlOptions.Controls.Add(btnGenerate);
-            pnlOptions.Controls.Add(btnClose);
+            SetNativeFormLabel(lblEntityStyle);
+            SetNativeFormLabel(lblProcessStyle);
+            SetNativeFormLabel(lblStoreStyle);
+            SetNativeFormLabel(lblLayoutScheme);
+            SetNativeFormLabel(lblConnectorStyle);
+            SetNativeFormLabel(lblSpacing);
+
+            cmbEntityStyle.Dock = DockStyle.Fill;
+            cmbProcessStyle.Dock = DockStyle.Fill;
+            cmbStoreStyle.Dock = DockStyle.Fill;
+            cmbLayoutScheme.Dock = DockStyle.Fill;
+            cmbConnectorStyle.Dock = DockStyle.Fill;
+
+            var spacingPanel = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Margin = new Padding(3, 0, 3, 0),
+                Padding = new Padding(0)
+            };
+            txtHorSpacing.Margin = new Padding(0, 2, 6, 0);
+            txtVerSpacing.Margin = new Padding(0, 2, 6, 0);
+            lblSpacingUnit.Margin = new Padding(0, 6, 0, 0);
+            spacingPanel.Controls.Add(txtHorSpacing);
+            spacingPanel.Controls.Add(txtVerSpacing);
+            spacingPanel.Controls.Add(lblSpacingUnit);
+
+            var buttonPanel = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.RightToLeft,
+                WrapContents = false,
+                Margin = new Padding(3, 6, 3, 0),
+                Padding = new Padding(0)
+            };
+            btnClose.Margin = new Padding(10, 0, 0, 0);
+            btnGenerate.Margin = new Padding(0);
+            buttonPanel.Controls.Add(btnClose);
+            buttonPanel.Controls.Add(btnGenerate);
+
+            var settingsLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 6,
+                RowCount = 3,
+                Padding = new Padding(10, 10, 10, 8),
+                BackColor = SystemColors.Control
+            };
+            settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 76F));
+            settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.333F));
+            settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 76F));
+            settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.333F));
+            settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 88F));
+            settingsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.334F));
+            settingsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38F));
+            settingsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38F));
+            settingsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42F));
+
+            settingsLayout.Controls.Add(lblEntityStyle, 0, 0);
+            settingsLayout.Controls.Add(cmbEntityStyle, 1, 0);
+            settingsLayout.Controls.Add(lblProcessStyle, 2, 0);
+            settingsLayout.Controls.Add(cmbProcessStyle, 3, 0);
+            settingsLayout.Controls.Add(lblStoreStyle, 4, 0);
+            settingsLayout.Controls.Add(cmbStoreStyle, 5, 0);
+            settingsLayout.Controls.Add(lblLayoutScheme, 0, 1);
+            settingsLayout.Controls.Add(cmbLayoutScheme, 1, 1);
+            settingsLayout.Controls.Add(lblConnectorStyle, 2, 1);
+            settingsLayout.Controls.Add(cmbConnectorStyle, 3, 1);
+            settingsLayout.Controls.Add(lblSpacing, 4, 1);
+            settingsLayout.Controls.Add(spacingPanel, 5, 1);
+            settingsLayout.Controls.Add(buttonPanel, 0, 2);
+            settingsLayout.SetColumnSpan(buttonPanel, 6);
+
+            grpOptions.Controls.Add(settingsLayout);
 
             this.Controls.Add(lblTip);
             this.Controls.Add(btnImportTable);
@@ -362,7 +413,7 @@ namespace VisioDataMapper
             this.Controls.Add(txtTitle);
             this.Controls.Add(dgvData);
             this.Controls.Add(txtStatus);
-            this.Controls.Add(pnlOptions);
+            this.Controls.Add(grpOptions);
 
             this.Resize += FormDataFlowDiagram_Resize;
             LayoutControls();
@@ -376,17 +427,22 @@ namespace VisioDataMapper
             dgvData.Width = width;
             txtStatus.Width = width;
 
-            Panel pnlOptions = Controls.OfType<Panel>().FirstOrDefault();
-            if (pnlOptions != null)
+            if (grpOptions != null)
             {
-                pnlOptions.Width = width;
-                pnlOptions.Top = ClientSize.Height - pnlOptions.Height - margin;
-                txtStatus.Top = pnlOptions.Top - txtStatus.Height - 15;
+                grpOptions.Width = width;
+                grpOptions.Top = ClientSize.Height - grpOptions.Height - margin;
+                txtStatus.Top = grpOptions.Top - txtStatus.Height - 15;
                 dgvData.Height = Math.Max(150, txtStatus.Top - dgvData.Top - 15);
-                
-                btnGenerate.Left = pnlOptions.Width - btnClose.Width - btnGenerate.Width - 30;
-                btnClose.Left = pnlOptions.Width - btnClose.Width - 15;
             }
+        }
+
+        private void SetNativeFormLabel(Label label)
+        {
+            label.AutoSize = false;
+            label.Dock = DockStyle.Fill;
+            label.TextAlign = ContentAlignment.MiddleRight;
+            label.Margin = new Padding(0, 0, 8, 0);
+            label.ForeColor = SystemColors.ControlText;
         }
 
         private void FormDataFlowDiagram_Resize(object sender, EventArgs e)
